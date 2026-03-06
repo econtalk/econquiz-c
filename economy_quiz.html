@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>오늘의 경제 퀴즈</title>
+<link href="https://fonts.googleapis.com/css2?family=Gmarket+Sans:wght@300;500;700&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f1a;
+    --card: #161928;
+    --accent: #f5c842;
+    --accent2: #ff6b6b;
+    --correct: #3de88a;
+    --wrong: #ff4f4f;
+    --text: #f0f0f0;
+    --sub: #8892b0;
+    --border: #232840;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 32px 16px 60px;
+  }
+  .app { width: 100%; max-width: 440px; }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 28px;
+    padding-top: 8px;
+  }
+  .header-tag {
+    display: inline-block;
+    background: var(--accent);
+    color: #000;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+  }
+  .header h1 {
+    font-family: 'Gmarket Sans', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #fff;
+  }
+  .header h1 span { color: var(--accent); }
+  .header p { font-size: 13px; color: var(--sub); margin-top: 6px; }
+
+  /* Progress */
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .level-pill {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+  .lv-easy   { background: #1a3a2a; color: var(--correct); }
+  .lv-mid    { background: #2a2a10; color: var(--accent); }
+  .lv-hard   { background: #2a1a1a; color: var(--accent2); }
+  .lv-expert { background: #1e1030; color: #c084fc; }
+  .lv-master { background: #0f1a2e; color: #60a5fa; }
+  .q-counter { font-size: 12px; color: var(--sub); font-weight: 700; }
+
+  .progress-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 99px;
+    margin-bottom: 18px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 99px;
+    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* Card */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 26px 22px;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), #ff8c00);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .card.answered::before { opacity: 1; }
+
+  .news-source {
+    font-size: 11px;
+    color: var(--sub);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .news-source::before {
+    content: '📰';
+    font-size: 12px;
+  }
+
+  .question {
+    font-size: 18px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.55;
+    margin-bottom: 22px;
+    word-break: keep-all;
+  }
+
+  /* Options */
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 13px 16px;
+    font-size: 15px;
+    font-family: 'Noto Sans KR', sans-serif;
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: border-color 0.18s, background 0.18s, transform 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .opt:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: rgba(245,200,66,0.06);
+    transform: translateX(4px);
+  }
+  .opt-num {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 900;
+    flex-shrink: 0;
+    color: var(--sub);
+    transition: background 0.2s, color 0.2s;
+  }
+  .opt-text { word-break: keep-all; line-height: 1.4; }
+
+  .opt.correct {
+    border-color: var(--correct);
+    background: rgba(61,232,138,0.08);
+  }
+  .opt.correct .opt-num { background: var(--correct); color: #000; }
+
+  .opt.wrong {
+    border-color: var(--wrong);
+    background: rgba(255,79,79,0.08);
+  }
+  .opt.wrong .opt-num { background: var(--wrong); color: #fff; }
+  .opt:disabled { cursor: default; transform: none !important; }
+
+  /* Explanation */
+  .explanation {
+    margin-top: 18px;
+    padding: 16px;
+    background: rgba(245,200,66,0.05);
+    border: 1px solid rgba(245,200,66,0.2);
+    border-radius: 12px;
+    font-size: 14px;
+    color: #bcc0d0;
+    line-height: 1.7;
+    display: none;
+    animation: slideIn 0.3s ease;
+    word-break: keep-all;
+  }
+  .explanation.show { display: block; }
+  .explanation strong { color: var(--accent); }
+  .explanation .tip-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  /* 상세 해설 */
+  .detail-wrap {
+    margin-top: 12px;
+    display: none;
+  }
+  .detail-wrap.show { display: block; }
+  .detail-toggle {
+    width: 100%;
+    background: transparent;
+    border: 1px solid rgba(192,132,252,0.35);
+    border-radius: 8px;
+    color: #c084fc;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Noto Sans KR', sans-serif;
+    padding: 9px 14px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.18s;
+  }
+  .detail-toggle:hover { background: rgba(192,132,252,0.08); }
+  .detail-toggle .arrow { transition: transform 0.25s; }
+  .detail-toggle.open .arrow { transform: rotate(180deg); }
+  .detail-content {
+    display: none;
+    margin-top: 10px;
+    padding: 16px;
+    background: rgba(192,132,252,0.05);
+    border: 1px solid rgba(192,132,252,0.15);
+    border-radius: 10px;
+    font-size: 13.5px;
+    color: #c0c8e0;
+    line-height: 1.75;
+    animation: slideIn 0.25s ease;
+  }
+  .detail-content.open { display: block; }
+  .detail-content p { margin-bottom: 10px; word-break: keep-all; }
+  .detail-content p:last-child { margin-bottom: 0; }
+  .detail-content strong { color: #c084fc; }
+  .detail-takeaway {
+    background: rgba(192,132,252,0.1);
+    border-left: 3px solid #c084fc;
+    border-radius: 0 8px 8px 0;
+    padding: 10px 12px !important;
+    color: #d8b4fe !important;
+    font-size: 13px !important;
+  }
+
+  /* Result indicator */
+  .result-badge {
+    display: none;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 8px;
+    margin-top: 14px;
+    text-align: center;
+  }
+  .result-badge.show { display: block; }
+  .result-badge.ok { background: rgba(61,232,138,0.12); color: var(--correct); }
+  .result-badge.no { background: rgba(255,79,79,0.1); color: var(--wrong); }
+
+  /* Next button */
+  .next-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 900;
+    font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer;
+    display: none;
+    transition: opacity 0.2s, transform 0.15s;
+    letter-spacing: -0.3px;
+  }
+  .next-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+  .next-btn.show { display: block; }
+
+  /* Score dots */
+  .dots {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+  .dot.ok { background: var(--correct); }
+  .dot.no { background: var(--wrong); }
+
+  /* Final screen */
+  .final {
+    display: none;
+    text-align: center;
+    padding: 10px 0;
+  }
+  .final.show { display: block; }
+  .final-emoji { font-size: 64px; margin-bottom: 16px; }
+  .final-score {
+    font-family: 'Gmarket Sans', sans-serif;
+    font-size: 52px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .final-total { font-size: 22px; color: var(--sub); }
+  .final-msg { font-size: 18px; font-weight: 700; color: #fff; margin: 14px 0 6px; }
+  .final-sub { font-size: 14px; color: var(--sub); margin-bottom: 28px; line-height: 1.6; }
+  .retry-btn {
+    padding: 15px 36px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 900;
+    font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pop {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.06); }
+    100% { transform: scale(1); }
+  }
+  .pop { animation: pop 0.25s ease; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-tag">📈 TODAY'S ECONOMY</div>
+    <h1>오늘의<br><span>경제 퀴즈</span></h1>
+    <p>최신 뉴스로 배우는 경제 상식 · 12문제</p>
+  </div>
+
+  <div class="dots" id="dots"></div>
+
+  <!-- Quiz Area -->
+  <div id="quizArea">
+    <div class="meta-row">
+      <span class="level-pill" id="levelPill">🌱 입문</span>
+      <span class="q-counter" id="counter">1 / 8</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:12.5%"></div>
+    </div>
+
+    <div class="card" id="qCard">
+      <div class="news-source" id="newsSource"></div>
+      <div class="question" id="questionText"></div>
+      <div class="options" id="optionsArea"></div>
+      <div class="result-badge" id="resultBadge"></div>
+      <div class="explanation" id="explanation"></div>
+      <div class="detail-wrap" id="detailWrap">
+        <button class="detail-toggle" id="detailToggle" onclick="toggleDetail()">
+          <span>📖 경제학자 관점 상세 해설 보기</span>
+          <span class="arrow">▼</span>
+        </button>
+        <div class="detail-content" id="detailContent"></div>
+      </div>
+    </div>
+
+    <button class="next-btn" id="nextBtn" onclick="nextQ()">다음 문제 →</button>
+  </div>
+
+  <!-- Final Screen -->
+  <div class="final" id="finalScreen">
+    <div class="final-emoji" id="finalEmoji"></div>
+    <div>
+      <span class="final-score" id="finalScore"></span>
+      <span class="final-total">/12</span>
+    </div>
+    <div class="final-msg" id="finalMsg"></div>
+    <div class="final-sub" id="finalSub"></div>
+    <div class="dots" id="finalDots" style="margin-bottom:28px"></div>
+    <button class="retry-btn" onclick="restart()">🔄 다시 풀기</button>
+  </div>
+</div>
+
+<script>
+const quizzes = [
+  {
+    level: "입문", levelClass: "lv-easy",
+    source: "2026.02.26 · 엔비디아 실적 발표",
+    q: "엔비디아가 AI 덕분에 분기 매출을 처음으로 돌파한 금액은?",
+    opts: ["100억 달러", "300억 달러", "680억 달러", "1,000억 달러"],
+    ans: 2,
+    exp: "엔비디아는 이번 분기 <strong>681억 달러(약 97조 원)</strong> 매출을 기록했어요. AI 서버에 들어가는 GPU 수요 덕분이에요. 우리나라 삼성전자 연 매출과 맞먹는 수준이에요!"
+  },
+  {
+    level: "입문", levelClass: "lv-easy",
+    source: "2026.02.24 · 미국 관세 발표",
+    q: "트럼프가 2월부터 수입 물건에 새로 붙인 관세는 얼마일까요?",
+    opts: ["3%", "7%", "10%", "25%"],
+    ans: 2,
+    exp: "미국이 <strong>10% 관세</strong>를 새로 부과했어요. 관세란 외국에서 들어오는 물건에 붙이는 세금이에요. 이게 오르면 수입품 가격이 올라 우리 물가에도 영향을 줄 수 있어요."
+  },
+  {
+    level: "입문", levelClass: "lv-easy",
+    source: "2026.02.13 · 일본 자동차 업계",
+    q: "미국 관세 때문에 일본 자동차 7개사가 날린 이익은?",
+    opts: ["약 1조 원", "약 14조 원", "약 50조 원", "약 100조 원"],
+    ans: 1,
+    exp: "관세 때문에 일본 주요 자동차 회사 7곳이 <strong>약 137억 달러(14조 원)</strong> 이익을 잃었어요. 도요타·혼다·닛산 등 미국에 차를 많이 수출하는 나라일수록 관세에 직격탄을 맞아요."
+  },
+  {
+    level: "초급", levelClass: "lv-mid",
+    source: "2026.02.26 · 애스턴 마틴 발표",
+    q: "영국 럭셔리카 브랜드 애스턴 마틴이 직원 20%를 자른 이유는?",
+    opts: ["전기차 전환 실패", "관세·수요 감소로 매출 급감", "창업자 사망", "특허 소송 패배"],
+    ans: 1,
+    exp: "미국·중국 관세 영향과 수요 감소로 2025년 매출이 <strong>21% 급감</strong>했어요. 그래서 인력의 20%를 줄이기로 했죠. 관세는 자동차 같은 고가 수출품에 특히 타격이 크답니다."
+  },
+  {
+    level: "초급", levelClass: "lv-mid",
+    source: "2026.02.27 · 국내 증시·금감원",
+    q: "금감독원이 1~3월 '결산 시즌'에 특히 단속하는 불공정 거래는?",
+    opts: ["가짜 뉴스 유포", "미공개 정보로 주식 거래", "공매도 남용", "외국인 매도"],
+    ans: 1,
+    exp: "회사 내부자가 <strong>아직 공개 안 된 실적 정보</strong>로 주식을 먼저 사고파는 게 '내부자 거래'예요. 결산기에 집중적으로 발생해요. 최근 3년간 불공정거래 중 79%가 1~3월에 일어났대요."
+  },
+  {
+    level: "초급", levelClass: "lv-mid",
+    source: "2026.02.13 · 전기차 시장 동향",
+    q: "2026년 1월 전 세계 전기차 판매량이 줄어든 이유가 아닌 것은?",
+    opts: ["중국의 관세 부과", "구매 보조금 삭감", "미국 규제 변화", "배터리 폭발 사고 증가"],
+    ans: 3,
+    exp: "관세, 보조금 삭감, 규제 변화로 전기차 판매가 <strong>3% 감소</strong>했어요. 배터리 사고는 이번 원인이 아니에요. 보조금이 사라지면 전기차 가격이 체감상 수백만 원 올라 소비자들이 구매를 미뤄요."
+  },
+  {
+    level: "중급", levelClass: "lv-hard",
+    source: "2026.02.26 · 한국 vs 중국 기술 경쟁력",
+    q: "한국산업연구원(KIET)이 최근 보고서에서 충격적으로 발표한 내용은?",
+    opts: ["한국 반도체 수출 세계 1위", "중국이 대부분 첨단기술 분야서 한국 앞질러", "삼성이 TSMC 인수 검토", "한국 성장률 3% 돌파 전망"],
+    ans: 1,
+    exp: "KIET 보고서에 따르면 <strong>중국이 대부분의 첨단기술 분야에서 한국을 앞지르기 시작</strong>했어요. 메모리 반도체는 아직 한국이 앞서지만, 디스플레이·배터리·조선 등 여러 분야에서 중국의 추격이 거세요."
+  },
+  {
+    level: "중급", levelClass: "lv-hard",
+    source: "2026.02.13 · KDI 경제전망",
+    q: "KDI가 예상한 2026년 한국 성장률은 작년(1.0%)보다 높아진 이유로 가장 적절한 것은?",
+    opts: ["부동산 가격 급등", "반도체 수출 호조 + 소비 회복", "정부 재정 지출 대폭 확대", "외국인 직접투자 급증"],
+    ans: 1,
+    exp: "KDI는 <strong>반도체 수출 호조와 소비 회복</strong> 덕분에 2026년 성장률이 1.9%로 오를 것으로 봤어요. 반도체는 우리나라 전체 수출의 20% 이상을 차지할 만큼 경제에서 핵심 역할을 해요."
+  },
+  {
+    level: "고급", levelClass: "lv-expert",
+    source: "2026.02.17 · 미국 CPI·PCE 지표 발표",
+    q: "미국 연준이 물가를 볼 때 CPI보다 PCE를 더 중요하게 보는 이유는?",
+    opts: [
+      "PCE가 에너지·식료품을 포함하지 않아서",
+      "PCE가 소비자 지출 패턴 변화를 반영해 더 정확해서",
+      "PCE가 CPI보다 항상 높은 수치를 보여서",
+      "CPI는 정부 조작이 쉽기 때문에"
+    ],
+    ans: 1,
+    exp: "CPI는 고정된 장바구니 품목 기준이지만, <strong>PCE(개인소비지출)</strong>는 사람들이 실제로 소비 패턴을 바꿀 때 그걸 반영해요. 예: 소고기가 비싸지면 돼지고기로 바꾸는 것. 연준은 이게 실제 물가 압력을 더 잘 보여준다고 판단해요.",
+    detail: `<p>경제학자들은 이걸 <strong>'대체 편의(Substitution Bias)'</strong> 문제라고 불러요.</p>
+<p>CPI는 매년 바꾸지 않는 '고정 장바구니'를 씁니다. 소고기가 두 배로 올라도 "여전히 소고기를 산다"고 가정해요. 현실과 달리 물가를 과대평가하는 거죠.</p>
+<p>반면 PCE는 <strong>실제 소비 데이터(신용카드·기업 매출 등)</strong>를 기반으로 매달 장바구니 비중을 다시 계산해요. 사람들이 이미 더 싼 걸로 갈아탔다면, 그 패턴을 반영하죠.</p>
+<p>또 하나의 차이: PCE는 의료비에서 <strong>보험사·고용주가 대신 내주는 부분까지 포함</strong>해요. 우리가 체감하는 것보다 훨씬 넓은 범위의 소비 물가를 잡아낸다는 뜻이에요. 그래서 연준 의장들은 공식 목표를 말할 때 항상 'PCE 2%'를 기준으로 삼아요.</p>
+<p class="detail-takeaway">📌 핵심: PCE가 CPI보다 보통 0.3~0.5%p 낮게 나와요. 연준이 CPI 대신 PCE를 쓰는 건, 물가를 '더 낮게' 보려는 게 아니라 '더 정확하게' 보려는 거예요.</p>`
+  },
+  {
+    level: "고급", levelClass: "lv-expert",
+    source: "2026.01~02 · 원·달러 환율 1,440원대 고착",
+    q: "한국은행이 경기 회복을 위해 금리를 내리고 싶어도 쉽게 못 내리는 진짜 이유는?",
+    opts: [
+      "국제통화기금(IMF)의 반대",
+      "금리를 내리면 원화 약세·자본유출이 더 심해질 수 있어서",
+      "삼성전자가 금리 인하를 반대해서",
+      "미국 연준이 먼저 내려야 한국도 내릴 수 있어서"
+    ],
+    ans: 1,
+    exp: "금리를 내리면 한·미 금리 격차가 벌어져 돈이 더 높은 금리를 찾아 미국으로 빠져나가요. 그러면 <strong>원화 약세(환율 상승)</strong>가 심해지고, 수입 물가가 올라 인플레이션을 부추기는 악순환이 생겨요. 지금 환율이 1,440원대인데, 여기서 더 오르면 부담이 커지죠.",
+    detail: `<p>경제학자들은 이걸 <strong>'통화정책 트릴레마(Trilemma)'</strong>라고 불러요. 세 가지를 동시에 가질 수 없다는 뜻이에요: ① 독립적인 금리 정책 ② 자유로운 자본 이동 ③ 안정적인 환율. 한국은 ②를 포기하기 어렵고 ③도 포기 못 하니, ①을 희생하는 상황이에요.</p>
+<p>구체적으로 보면: 현재 미국 금리(4.25~4.5%) vs 한국 금리(2.75%). 이미 1.5~1.75%p 격차가 나요. 여기서 한국이 추가로 내리면 격차가 더 벌어지면서 <strong>외국인 투자자들이 한국 채권·주식을 팔고 미국으로</strong> 이동할 유인이 커져요.</p>
+<p>그 결과 원화를 팔고 달러를 사는 수요가 늘어 환율이 오르고 → 석유·곡물 등 수입 원자재 가격이 올라 → 국내 물가가 다시 오르는 악순환. 경제학자들은 이걸 <strong>'환율의 인플레이션 전이(Pass-through Effect)'</strong>라고 불러요.</p>
+<p class="detail-takeaway">📌 핵심: 한국은행은 금리를 내리고 싶어도 환율이 1,500원을 넘어설 위험이 있어서 함부로 못 내려요. 경기와 환율 사이에서 줄타기하는 게 지금 한은의 현실이에요.</p>`
+  },
+  {
+    level: "최고급", levelClass: "lv-master",
+    source: "2026.02 · 트럼프 관세 + 연준 딜레마",
+    q: "트럼프가 관세를 올렸는데, 이게 동시에 '물가도 올리고 경기도 꺾는' 최악의 조합인 이유는?",
+    opts: [
+      "관세가 수입품 가격을 올려 물가↑, 기업 비용도 올려 생산·소비↓",
+      "관세 수입이 많아져 정부가 돈을 과도하게 쓰기 때문",
+      "달러가 강해져 수출이 줄고 미국 국채 이자가 오르기 때문",
+      "관세로 일자리가 갑자기 너무 많이 생겨 임금이 과열되기 때문"
+    ],
+    ans: 0,
+    exp: "이걸 경제학에서 <strong>스태그플레이션(Stagflation)</strong> 우려라고 해요. 관세 → 수입품값 상승 → 물가↑. 동시에 기업 원가 상승 → 투자·생산 위축 → 경기↓. 연준 입장에서는 물가를 잡으려면 금리를 올려야 하는데, 그러면 경기가 더 나빠지는 진퇴양난에 빠져요.",
+    detail: `<p>경제학 교과서에서 물가와 경기는 보통 <strong>같은 방향</strong>으로 움직여요. 경기가 좋으면 물가도 오르고, 경기가 나쁘면 물가도 내려요. 그래서 중앙은행은 금리를 올리거나 내려서 균형을 찾을 수 있어요.</p>
+<p>그런데 스태그플레이션은 이 법칙이 깨지는 상황이에요. <strong>물가↑ + 경기↓</strong>가 동시에 오면, 금리를 올리면 물가는 잡히지만 경기는 더 죽고, 금리를 내리면 경기는 살아나지만 물가는 더 오르는 <strong>정책 딜레마</strong>에 빠져요.</p>
+<p>1970년대 오일쇼크 때 전 세계가 이걸 경험했고, 당시 경제학자 폴 새뮤얼슨은 "이건 교과서에도 없는 일"이라고 했을 만큼 충격이었어요. 지금 관세가 촉발하는 공급 충격은 그 구조와 비슷해요. 연준이 2026년 금리 인하를 망설이는 핵심 이유가 바로 이거예요.</p>
+<p class="detail-takeaway">📌 핵심: 관세는 단순한 무역 문제가 아니에요. '공급 충격 → 스태그플레이션 → 통화정책 무력화'로 이어지는 연쇄반응의 시작점이 될 수 있어요.</p>`
+  },
+  {
+    level: "최고급", levelClass: "lv-master",
+    source: "2026.02 · 한미 관세협상 + 대미투자 약속",
+    q: "한국이 미국과의 관세 협상에서 '매년 최대 200억 달러 대미 투자'를 약속했는데, 이게 원화 약세를 부추기는 이유는?",
+    opts: [
+      "한국 기업이 달러를 사서 미국에 투자해야 하므로 원화 공급↑·달러 수요↑",
+      "미국이 한국 국채를 대규모로 팔기 때문",
+      "투자금이 가계부채로 쓰여 금융시스템이 불안해지기 때문",
+      "대미 수출이 늘어 달러가 너무 많이 들어오기 때문"
+    ],
+    ans: 0,
+    exp: "한국 기업이 미국에 투자하려면 <strong>원화를 팔고 달러를 사야 해요</strong>. 이 과정에서 원화 공급은 늘고 달러 수요는 늘어 원/달러 환율이 올라요(원화 약세). 쉽게 말해, 한국 돈을 미국으로 보내는 것 자체가 원화 가치를 떨어뜨리는 거예요.",
+    detail: `<p>경제학에서 이걸 <strong>'자본수지(Capital Account)와 경상수지의 상충 관계'</strong>로 설명해요. 한국이 수출로 달러를 버는 건 경상수지에 플러스, 미국에 투자하러 달러를 내보내는 건 자본수지에 마이너스예요.</p>
+<p>지금까지 한국은 수출로 번 달러가 국내에 쌓이면서 원화를 어느 정도 받쳐줬어요. 그런데 <strong>연 200억 달러(약 28조 원)를 미국에 보내면</strong>, 이 달러가 국내에 머물지 않고 바로 빠져나가요. 수요·공급 원리로 달러는 귀해지고 원화는 흔해지니 환율이 올라요.</p>
+<p>더 깊이 보면, 이건 단순한 환율 문제를 넘어서 <strong>'산업 공동화(Hollowing-out)'</strong> 우려로도 이어져요. 삼성·SK·현대가 미국에 공장을 세우면, 그 투자와 일자리가 한국 대신 미국에 생기는 거거든요. 관세를 피하려다 더 큰 걸 잃는 역설이에요.</p>
+<p class="detail-takeaway">📌 핵심: 관세 협상에서 '투자 약속'은 단기적으로 관세를 낮출 수 있지만, 장기적으로는 원화 약세 + 국내 산업 공동화라는 부메랑이 될 수 있어요. 경제학자들이 이 협상을 복잡하게 보는 이유예요.</p>`
+  }
+];
+
+let cur = 0, score = 0, answers = [];
+const dots = document.getElementById('dots');
+
+function initDots() {
+  dots.innerHTML = '';
+  for (let i = 0; i < quizzes.length; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    d.id = 'dot' + i;
+    dots.appendChild(d);
+  }
+}
+
+function render() {
+  const q = quizzes[cur];
+  document.getElementById('levelPill').textContent =
+    q.levelClass === 'lv-easy'   ? '🌱 입문'  :
+    q.levelClass === 'lv-mid'    ? '🔥 초급'  :
+    q.levelClass === 'lv-hard'   ? '⚡ 중급'  :
+    q.levelClass === 'lv-expert' ? '💎 고급'  : '👑 최고급';
+  document.getElementById('levelPill').className = 'level-pill ' + q.levelClass;
+  document.getElementById('counter').textContent = `${cur + 1} / ${quizzes.length}`;
+  document.getElementById('progressFill').style.width = `${((cur + 1) / quizzes.length) * 100}%`;
+  document.getElementById('newsSource').textContent = q.source;
+  document.getElementById('questionText').textContent = q.q;
+
+  const area = document.getElementById('optionsArea');
+  area.innerHTML = '';
+  const labels = ['①', '②', '③', '④'];
+  q.opts.forEach((o, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.innerHTML = `<span class="opt-num">${labels[i]}</span><span class="opt-text">${o}</span>`;
+    btn.onclick = () => pick(i);
+    area.appendChild(btn);
+  });
+
+  document.getElementById('resultBadge').className = 'result-badge';
+  document.getElementById('explanation').className = 'explanation';
+  document.getElementById('nextBtn').className = 'next-btn';
+  document.getElementById('qCard').classList.remove('answered');
+}
+
+function pick(idx) {
+  const q = quizzes[cur];
+  const btns = document.querySelectorAll('.opt');
+  btns.forEach(b => b.disabled = true);
+
+  const isCorrect = idx === q.ans;
+  btns[idx].classList.add(isCorrect ? 'correct' : 'wrong');
+  if (!isCorrect) btns[q.ans].classList.add('correct');
+
+  if (isCorrect) {
+    score++;
+    document.getElementById('dot' + cur).className = 'dot ok';
+    document.getElementById('resultBadge').textContent = '🎉 정답! 맞혔어요';
+    document.getElementById('resultBadge').className = 'result-badge show ok';
+  } else {
+    answers.push(idx);
+    document.getElementById('dot' + cur).className = 'dot no';
+    document.getElementById('resultBadge').textContent = '❌ 아깝네요! 정답은 ' + (q.ans + 1) + '번이에요';
+    document.getElementById('resultBadge').className = 'result-badge show no';
+  }
+
+  document.getElementById('explanation').innerHTML =
+    `<span class="tip-label">💡 한 줄 해설</span>` + q.exp;
+  document.getElementById('explanation').className = 'explanation show';
+  document.getElementById('qCard').classList.add('answered');
+
+  // 상세해설 (고급/최고급만)
+  const detailWrap = document.getElementById('detailWrap');
+  const detailContent = document.getElementById('detailContent');
+  const detailToggle = document.getElementById('detailToggle');
+  if (q.detail) {
+    detailContent.innerHTML = q.detail;
+    detailContent.className = 'detail-content';
+    detailToggle.className = 'detail-toggle';
+    detailWrap.className = 'detail-wrap show';
+  } else {
+    detailWrap.className = 'detail-wrap';
+  }
+
+  const label = cur < quizzes.length - 1 ? '다음 문제 →' : '결과 보기 🏁';
+  document.getElementById('nextBtn').textContent = label;
+  document.getElementById('nextBtn').className = 'next-btn show';
+}
+
+function toggleDetail() {
+  const toggle = document.getElementById('detailToggle');
+  const content = document.getElementById('detailContent');
+  const isOpen = content.classList.contains('open');
+  toggle.classList.toggle('open', !isOpen);
+  content.classList.toggle('open', !isOpen);
+}
+
+function nextQ() {
+  cur++;
+  if (cur >= quizzes.length) { showFinal(); return; }
+  render();
+}
+
+function showFinal() {
+  document.getElementById('quizArea').style.display = 'none';
+  const pct = score / quizzes.length;
+  const emojis = ['😢', '😅', '🙂', '😎', '🏆'];
+  const msgs = ['다음엔 더 잘 할 수 있어요!', '조금만 더 공부해봐요!', '꽤 알고 있네요!', '경제 고수 예비군!', '완벽해요! 경제 마스터!'];
+  const subs = [
+    '경제 뉴스를 하루 한 개씩 읽어보는 건 어떨까요?',
+    '틀린 문제의 해설을 다시 읽어보세요!',
+    '꾸준히 퀴즈를 풀면 더 빨리 늘어요!',
+    '이 정도면 주변 사람들한테 경제 설명해줄 수 있어요 😄',
+    '최신 기사 계속 팔로업 해요!'
+  ];
+  const idx = Math.min(Math.floor(pct * 5), 4);
+
+  document.getElementById('finalEmoji').textContent = emojis[idx];
+  document.getElementById('finalScore').textContent = score;
+  document.getElementById('finalMsg').textContent = msgs[idx];
+  document.getElementById('finalSub').textContent = subs[idx];
+
+  // result dots
+  const fd = document.getElementById('finalDots');
+  fd.innerHTML = '';
+  for (let i = 0; i < quizzes.length; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot ' + (document.getElementById('dot' + i).classList.contains('ok') ? 'ok' : 'no');
+    fd.appendChild(d);
+  }
+  document.getElementById('dots').style.display = 'none';
+
+  const fs = document.getElementById('finalScreen');
+  fs.className = 'final show card';
+}
+
+function restart() {
+  cur = 0; score = 0; answers = [];
+  document.getElementById('quizArea').style.display = 'block';
+  document.getElementById('dots').style.display = 'flex';
+  document.getElementById('finalScreen').className = 'final';
+  initDots();
+  render();
+}
+
+initDots();
+render();
+
+// ─── JSON 파일에서 퀴즈 자동 로드 (generate_quiz.py 사용 시) ───
+// GitHub에 quiz_YYYYMMDD.json 파일을 올리면 자동으로 불러옵니다.
+// 사용하려면 아래 주석을 해제하고 위의 initDots()/render() 두 줄을 주석 처리하세요.
+//
+// async function loadQuiz() {
+//   const today = new Date().toISOString().slice(0,10).replace(/-/g,'');
+//   try {
+//     const res = await fetch(`quiz_${today}.json`);
+//     const data = await res.json();
+//     quizzes.length = 0;
+//     data.quizzes.forEach(q => quizzes.push(q));
+//     document.querySelector('.header p').textContent =
+//       `최신 뉴스로 배우는 경제 상식 · ${data.date} · ${quizzes.length}문제`;
+//   } catch(e) {
+//     console.log('JSON 로드 실패, 기본 퀴즈로 실행:', e);
+//   }
+//   initDots();
+//   render();
+// }
+// loadQuiz();
+</script>
+</body>
+</html>
