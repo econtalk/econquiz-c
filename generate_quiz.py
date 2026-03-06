@@ -31,16 +31,25 @@ PROMPT = f"""
 - 숫자/금액이 등장하거나 인과관계가 명확한 것
 
 [난이도 구성] 순서 그대로 1개씩
-1. 입문 (lv-easy)    — "얼마?" "누가?" 단순 사실 확인
-2. 초급 (lv-mid)     — "왜?" 원인 묻기
-3. 중급 (lv-hard)    — 결과·영향 묻기
-4. 고급 (lv-expert)  — 경제 메커니즘 묻기
-5. 최고급 (lv-master) — 여러 개념 연결 추론
+1. 입문 (lv-easy)     — "얼마?" "누가?" 단순 사실 확인
+2. 초급 (lv-mid)      — "왜?" 원인 묻기
+3. 중급 (lv-hard)     — 결과·영향 묻기
+4. 고급 (lv-expert)   — 경제 메커니즘 묻기
+5. 최고급 (lv-master)  — 여러 개념 연결 추론
 
 [질문 규칙]
-- 15자 이내, 짧고 임팩트 있게
-- 4지선다, 정답 1개
-- 오답 3개는 그럴듯하게
+- 질문 앞에 1~2줄 배경 설명을 붙여서 맥락을 줄 것
+  예) "2월 미국 CPI가 예상보다 높게 나왔습니다. 이때 연준이 금리를 올리면 어떤 일이 생길까요?"
+  배경 설명은 context 필드에 따로 저장
+- 질문 자체(q)는 15자 이내, 짧고 임팩트 있게
+- 4지선다, 정답 1개, 오답은 그럴듯하게
+- 난이도가 올라갈수록 배경 설명도 조금씩 더 구체적으로
+
+[관련 기사 링크 (article_url)]
+- 해당 뉴스를 다룬 실제 기사 URL을 1개 제공
+- 한국 언론사 우선 (연합뉴스, 한국경제, 조선일보, 매일경제 등)
+- 실제로 존재할 가능성이 높은 URL 형식으로 작성
+- 기사 제목도 article_title 필드에 함께 저장
 
 [한 줄 해설 (exp)]
 - 2문장 이내, 핵심 키워드 1개만 <strong> 강조
@@ -50,11 +59,12 @@ PROMPT = f"""
 경제학 박사가 이론과 실제를 함께 설명:
 - <span class="expert-label">🎓 박사의 한마디</span> 로 시작
 - <p> 태그 2~3개 문단
-- 문단1: 경제학 이론명 + 쉬운 풀이 (전문용어 뒤 괄호로 설명)
-- 문단2: 실제 사례 또는 역사적 선례
+- 문단1: 경제학 이론명 + 쉬운 풀이 (전문용어 뒤 반드시 괄호로 쉬운 설명)
+- 문단2: 실제 사례 또는 역사적 선례로 연결
 - 마지막: <p class="takeaway"> 핵심 한 줄 정리
 - <strong>으로 핵심 개념 강조
-- "~해요" "~거든요" "~이에요" 말투, 200~300자 내외
+- "~해요" "~거든요" "~이에요" 말투
+- 250~350자 내외로 충분히 설명
 
 [출력] JSON만, 다른 텍스트 없이:
 {{
@@ -63,11 +73,14 @@ PROMPT = f"""
     {{
       "levelClass": "lv-easy",
       "source": "{today_display} · 출처명",
+      "context": "1~2줄 배경 설명. 뉴스의 핵심 사실을 독자가 모른다고 가정하고 설명.",
       "q": "질문 (15자 이내)",
       "opts": ["보기1", "보기2", "보기3", "보기4"],
       "ans": 0,
       "exp": "한 줄 해설 HTML",
-      "expert_detail": "전문가 해설 HTML"
+      "expert_detail": "전문가 해설 HTML",
+      "article_title": "관련 기사 제목",
+      "article_url": "https://..."
     }}
   ]
 }}
@@ -78,7 +91,7 @@ def generate():
     print(f"🤖 [{today}] 퀴즈 생성 시작...")
     msg = client.messages.create(
         model="claude-opus-4-6",
-        max_tokens=4096,
+        max_tokens=5000,
         messages=[{"role": "user", "content": PROMPT}]
     )
     raw = msg.content[0].text
@@ -99,6 +112,8 @@ def save(data):
     print(f"✅ quiz_today.json 저장 완료 — 퀴즈 {len(data['quizzes'])}개")
     for i, q in enumerate(data['quizzes'], 1):
         print(f"  {i}. [{levels.get(q['levelClass'], q['levelClass'])}] {q['q']}")
+        if q.get('article_url'):
+            print(f"      🔗 {q['article_url']}")
 
 if __name__ == '__main__':
     if not os.environ.get('ANTHROPIC_API_KEY'):
