@@ -132,7 +132,19 @@
     word-break: keep-all;
   }
 
-  /* 기사 링크 제거됨 */
+  /* 기사 링크 */
+  .article-link {
+    display: none; align-items: center; gap: 6px;
+    margin-top: 12px; padding: 9px 14px;
+    background: rgba(245,200,66,0.06);
+    border: 1px solid rgba(245,200,66,0.2);
+    border-radius: 8px; text-decoration: none;
+    font-size: 12px; color: var(--accent); font-weight: 700;
+    transition: background .18s; line-height: 1.4; word-break: break-all;
+  }
+  .article-link.show { display: inline-flex; }
+  .article-link:hover { background: rgba(245,200,66,0.12); }
+  .article-link::before { content: '🔗'; flex-shrink: 0; }
 
   .question {
     font-size: 18px; font-weight: 900; color: #fff;
@@ -293,6 +305,7 @@
       <div class="options"      id="optionsArea"></div>
       <div class="result-badge" id="resultBadge"></div>
       <div class="explanation"  id="explanation"></div>
+      <a class="article-link" id="articleLink" target="_blank" rel="noopener"></a>
       <div class="expert-wrap"  id="expertWrap">
         <button class="expert-toggle" id="expertToggle" onclick="toggleExpert()">
           <span>🎓 경제학 박사의 심층 해설 보기</span>
@@ -433,6 +446,7 @@ function render() {
   // 초기화
   document.getElementById('resultBadge').className  = 'result-badge';
   document.getElementById('explanation').className  = 'explanation';
+  document.getElementById('articleLink').className  = 'article-link';
   document.getElementById('expertWrap').className   = 'expert-wrap';
   document.getElementById('expertBody').className  = 'expert-body';
   document.getElementById('expertToggle').className= 'expert-toggle';
@@ -464,6 +478,16 @@ function pick(idx) {
   document.getElementById('explanation').innerHTML =
     `<span class="tip-label">💡 한 줄 해설</span>${q.exp}`;
   document.getElementById('explanation').className = 'explanation show';
+
+  // 기사 링크
+  const linkEl = document.getElementById('articleLink');
+  if (q.article_url) {
+    linkEl.href = q.article_url;
+    linkEl.textContent = q.article_title || '관련 기사 보기';
+    linkEl.className = 'article-link show';
+  } else {
+    linkEl.className = 'article-link';
+  }
 
   // 전문가 해설
   if (q.expert_detail) {

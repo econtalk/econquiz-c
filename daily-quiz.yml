@@ -1,0 +1,54 @@
+# ─────────────────────────────────────────────
+# 매일 오전 6시 (한국시간) 퀴즈 자동 생성
+# ─────────────────────────────────────────────
+# 한국시간 오전 6시 = UTC 오후 9시 (21:00)
+
+name: 🗞️ 오늘의 경제 퀴즈 자동 생성
+
+on:
+  schedule:
+    - cron: '0 21 * * *'   # 매일 UTC 21:00 = 한국시간 06:00
+  workflow_dispatch:        # 수동 실행 버튼도 활성화 (테스트용)
+
+permissions:
+  contents: write           # 저장소에 파일 쓰기 권한
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 저장소 체크아웃
+      - name: 📥 저장소 가져오기
+        uses: actions/checkout@v4
+
+      # 2. Python 설치
+      - name: 🐍 Python 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 3. 의존성 설치
+      - name: 📦 anthropic 패키지 설치
+        run: pip install anthropic
+
+      # 4. 퀴즈 생성 스크립트 실행
+      - name: 🤖 퀴즈 생성
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY:    ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python generate_quiz.py
+          echo "--- 생성된 파일 확인 ---"
+          ls -la quiz_today.json
+          echo "--- JSON 첫 줄 확인 ---"
+          head -3 quiz_today.json
+
+      # 5. 생성된 quiz_today.json을 저장소에 커밋 & 푸시
+      - name: 💾 퀴즈 파일 저장
+        run: |
+          git config user.name  "quiz-bot"
+          git config user.email "quiz-bot@github-actions"
+          git add -f quiz_today.json
+          git commit -m "🗞️ $(date '+%Y-%m-%d') 오늘의 퀴즈 업데이트" || echo "변경사항 없음"
+          git push
