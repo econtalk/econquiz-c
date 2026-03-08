@@ -7,7 +7,7 @@ name: 🗞️ 오늘의 경제 퀴즈 자동 생성
 
 on:
   schedule:
-    - cron: '0 21 * * *'   # 매일 UTC 21:00 = 한국시간 06:00
+    - cron: '0 11 * * *'   # 매일 UTC 11:00 = 미국 동부시간(ET) 06:00
   workflow_dispatch:        # 수동 실행 버튼도 활성화 (테스트용)
 
 permissions:
