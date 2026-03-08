@@ -117,10 +117,6 @@ def fetch_news_from_gemini():
 # 2단계: Claude → 뉴스 기반 퀴즈 생성
 # ═══════════════════════════════════════
 def build_quiz_prompt(news_list):
-    import random
-    # 정답 위치를 미리 랜덤하게 배정 (0~3)
-    answer_positions = random.sample([0, 1, 2, 3], 4) + [random.randint(0, 3)]
-
     news_block = ""
     for i, n in enumerate(news_list, 1):
         news_block += f"""
@@ -128,11 +124,6 @@ def build_quiz_prompt(news_list):
 출처: {n['source']} | URL: {n.get('url', '')}
 내용: {n['summary']}
 """
-
-    pos_guide = "\n".join([
-        f"  퀴즈 {i+1}: 정답을 반드시 {p+1}번 보기에 배치할 것 (ans: {p})"
-        for i, p in enumerate(answer_positions)
-    ])
 
     return f"""
 당신은 경제 퀴즈 출제 전문가입니다.
@@ -146,15 +137,7 @@ def build_quiz_prompt(news_list):
 ━━━━━━━━━━━━━━━━━━━━━━
 - 정답과 오답은 반드시 위 뉴스에 명시된 사실에만 근거할 것
 - 뉴스에 없는 수치나 사실을 절대 만들어내지 말 것
-- 모르는 내용은 추측하지 말 것
 - 정답 보기는 뉴스 원문의 수치/단어와 정확히 일치해야 함
-
-━━━━━━━━━━━━━━━━━━━━━━
-★ 정답 위치 (반드시 준수)
-━━━━━━━━━━━━━━━━━━━━━━
-{pos_guide}
-- ans 필드는 위 지정된 값과 반드시 일치해야 함
-- opts 배열에서 ans 인덱스 위치에 정답을 배치할 것
 
 ━━━━━━━━━━━━━━━━━━━━━━
 ★ 질문 유형 규칙
@@ -224,6 +207,7 @@ def build_quiz_prompt(news_list):
 """
 
 def fetch_quiz_from_claude(news_list):
+    import random
     client = anthropic.Anthropic()
     print("\n🤖 [2단계] Claude로 퀴즈 생성 중...")
 
@@ -241,7 +225,6 @@ def fetch_quiz_from_claude(news_list):
     raw = max(texts, key=len)
     print(f"  Claude 응답 길이: {len(raw)}자")
 
-    # 중첩 중괄호까지 정확히 추출
     start = raw.find('{')
     if start == -1:
         raise ValueError("JSON { 없음:\n" + raw[:300])
@@ -265,8 +248,24 @@ def fetch_quiz_from_claude(news_list):
         data = json.loads(cleaned)
 
     assert len(data['quizzes']) == 5, f"퀴즈 5개 필요. 실제: {len(data['quizzes'])}개"
+
+    # Python에서 직접 정답 위치 랜덤 셔플 (Claude가 못 지켜도 여기서 보정)
     for q in data['quizzes']:
-        assert len(q['opts']) == 4 and 0 <= q['ans'] <= 3
+        opts = q['opts']
+        ans  = q.get('ans', 0)
+
+        # ans가 범위 밖이면 0으로 보정
+        if not (0 <= ans <= 3):
+            ans = 0
+
+        # 정답 보기를 랜덤 위치로 이동
+        correct = opts[ans]
+        others  = [o for i, o in enumerate(opts) if i != ans]
+        random.shuffle(others)
+        new_pos = random.randint(0, 3)
+        others.insert(new_pos, correct)
+        q['opts'] = others
+        q['ans']  = new_pos
 
     return data
 
