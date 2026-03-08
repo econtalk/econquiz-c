@@ -1,12 +1,15 @@
 """
-generate_quiz.py — 2단계 퀴즈 생성
+generate_quiz.py — 3단계 퀴즈 생성
 ─────────────────────────────────────
-1단계: Gemini API (무료) → 오늘 경제 뉴스 5개 + 링크 수집
-2단계: Claude API       → 뉴스 기반 퀴즈 5개 + 해설 생성
+1단계: 네이버 뉴스 API → 오늘 경제 뉴스 검색 (실제 URL 보장)
+2단계: Gemini API     → 뉴스 중 5개 선정 + 요약
+3단계: Claude API     → 뉴스 기반 퀴즈 5개 + 해설 생성
 
 환경변수:
-  ANTHROPIC_API_KEY = sk-ant-...
-  GEMINI_API_KEY    = AIza...
+  ANTHROPIC_API_KEY   = sk-ant-...
+  GEMINI_API_KEY      = AIza...
+  NAVER_CLIENT_ID     = 네이버 앱 Client ID
+  NAVER_CLIENT_SECRET = 네이버 앱 Client Secret
 """
 
 import anthropic
@@ -14,98 +17,163 @@ import json
 import re
 import os
 import urllib.request
+import urllib.parse
 from datetime import datetime, timedelta, timezone
 
 KST = timezone(timedelta(hours=9))
 today = datetime.now(KST).strftime('%Y-%m-%d')
 today_display = datetime.now(KST).strftime('%Y.%m.%d')
 
+# 허용 언론사 목록
+ALLOWED_SOURCES = [
+    '조선일보', '중앙일보', '동아일보', '한겨레', '서울신문', '한국일보', '세계일보',
+    '매일경제', '한국경제', '서울경제', '뉴스토마토',
+    '연합뉴스', '연합인포맥스',
+    'The Economist', 'Financial Times', 'New York Times', 'The Guardian',
+    'Reuters', 'Bloomberg'
+]
+
 # ═══════════════════════════════════════
-# 1단계: Gemini → 오늘 뉴스 5개 수집
+# 1단계: 네이버 뉴스 API → 경제 뉴스 검색
 # ═══════════════════════════════════════
-GEMINI_NEWS_PROMPT = f"""
-오늘({today_display}) 기준으로 가장 화제가 된 한국 경제 뉴스 5가지를 찾아줘.
+def fetch_news_from_naver():
+    client_id     = os.environ.get('NAVER_CLIENT_ID')
+    client_secret = os.environ.get('NAVER_CLIENT_SECRET')
+    if not client_id or not client_secret:
+        raise EnvironmentError("NAVER_CLIENT_ID 또는 NAVER_CLIENT_SECRET 없음")
+
+    print("📰 [1단계] 네이버 뉴스 API로 경제 뉴스 검색 중...")
+
+    # 경제 키워드로 복수 검색해서 풍부한 후보 확보
+    keywords = ['경제 금리 환율', '주가 코스피', '물가 수출 무역']
+    candidates = []
+
+    for kw in keywords:
+        query = urllib.parse.quote(kw)
+        api_url = f"https://openapi.naver.com/v1/search/news.json?query={query}&display=10&sort=date"
+        req = urllib.request.Request(api_url, headers={
+            'X-Naver-Client-Id':     client_id,
+            'X-Naver-Client-Secret': client_secret,
+        })
+        with urllib.request.urlopen(req) as res:
+            data = json.loads(res.read().decode())
+
+        for item in data.get('items', []):
+            # 네이버 뉴스 링크(n.news.naver.com) 대신 originallink 사용
+            url = item.get('originallink') or item.get('link', '')
+            title = re.sub(r'<[^>]+>', '', item.get('title', ''))
+            desc  = re.sub(r'<[^>]+>', '', item.get('description', ''))
+            source = item.get('source', '')
+
+            # 허용 언론사 필터 (source 필드가 없으면 URL 도메인으로 판단)
+            allowed = any(s in source for s in ALLOWED_SOURCES) or any(
+                d in url for d in [
+                    'chosun.com', 'joongang.co.kr', 'donga.com', 'hani.co.kr',
+                    'seoul.co.kr', 'hankookilbo.com', 'segye.com',
+                    'mk.co.kr', 'hankyung.com', 'sedaily.com', 'newstomato.com',
+                    'yna.co.kr', 'yonhapinfomax.co.kr',
+                    'economist.com', 'ft.com', 'nytimes.com',
+                    'theguardian.com', 'reuters.com', 'bloomberg.com'
+                ]
+            )
+            if not allowed:
+                continue
+
+            # n.news.naver.com URL 제외 (리다이렉트 주소)
+            if 'n.news.naver.com' in url or 'news.naver.com' in url:
+                if item.get('originallink'):
+                    url = item['originallink']
+                else:
+                    continue
+
+            if url and url.startswith('http'):
+                candidates.append({
+                    'title':   title,
+                    'desc':    desc,
+                    'url':     url,
+                    'source':  source or '언론사',
+                })
+
+    # 중복 URL 제거
+    seen, unique = set(), []
+    for c in candidates:
+        if c['url'] not in seen:
+            seen.add(c['url'])
+            unique.append(c)
+
+    print(f"  ✅ 후보 뉴스 {len(unique)}개 수집")
+    return unique
+
+
+# ═══════════════════════════════════════
+# 2단계: Gemini → 후보 중 5개 선정 + 요약
+# ═══════════════════════════════════════
+def select_news_with_gemini(candidates):
+    api_key = os.environ.get('GEMINI_API_KEY')
+    if not api_key:
+        raise EnvironmentError("GEMINI_API_KEY 없음")
+
+    print("\n🔍 [2단계] Gemini로 오늘의 핵심 뉴스 5개 선정 중...")
+
+    # 후보 목록 텍스트화
+    cand_text = ""
+    for i, c in enumerate(candidates[:30], 1):  # 최대 30개만 전달
+        cand_text += f"{i}. [{c['source']}] {c['title']}\n   URL: {c['url']}\n   요약: {c['desc']}\n\n"
+
+    prompt = f"""
+아래는 오늘({today_display}) 네이버 뉴스에서 수집한 경제 뉴스 목록이에요.
+이 중에서 가장 화제성 있고 생활과 연결된 뉴스 5개를 골라주세요.
 
 [선정 기준]
 - 일반인이 "어, 나도 들어봤는데!" 할 만큼 화제성 있는 것
 - 금리·환율·주가·무역·기업 실적·물가 등 생활과 연결된 것
-- 숫자/금액/퍼센트가 등장하는 구체적인 뉴스
+- 중복 주제 피하고 다양한 분야에서 선정
+- 구체적인 수치가 포함된 뉴스 우선
 
-[허용 출처] 아래 목록에 있는 언론사 기사만 사용할 것
-국내 일간지: 조선일보, 중앙일보, 동아일보, 한겨레, 서울신문, 한국일보, 세계일보
-국내 경제지: 매일경제, 한국경제, 서울경제, 뉴스토마토
-국내 통신사: 연합뉴스, 연합인포맥스
-외신: The Economist, Financial Times, New York Times, The Guardian, Reuters, Bloomberg
-위 목록에 없는 출처(네이버뉴스, 다음뉴스, 유튜브, 블로그, 커뮤니티 등)는 절대 사용 금지
+[후보 뉴스 목록]
+{cand_text}
 
-[URL 규칙] ★ 매우 중요
-- Google Search로 직접 검색해서 실제로 접속 가능한 URL만 사용할 것
-- 검색 결과에서 해당 기사를 직접 확인한 URL만 넣을 것
-- URL을 추측하거나 임의로 만들지 말 것
-- 확인되지 않은 URL이면 url 필드를 null로 설정
-- 연합뉴스 URL 형식 예시: https://www.yna.co.kr/view/AKR20260308XXXXXXX
-- 한국경제 URL 형식 예시: https://www.hankyung.com/article/XXXXXXXXXX
-- 조선일보 URL 형식 예시: https://www.chosun.com/economy/XXXX/XX/XX/XXXXXXXXXX/
+[중요] 선정한 뉴스의 URL은 위 목록에 있는 것 그대로 복사할 것. 절대 수정하거나 새로 만들지 말 것.
 
-[각 뉴스 항목에 포함할 것]
-1. 제목
-2. 핵심 내용 요약 (3~5문장, 구체적 수치 반드시 포함)
-3. 실제 확인된 기사 URL (확인 불가시 null)
-4. 출처 언론사명
+각 뉴스에 대해 3~5문장 분량의 상세 요약을 작성해줘 (구체적 수치 포함).
 
 [출력] JSON만, 다른 텍스트 없이:
 {{
   "news": [
     {{
       "title": "기사 제목",
-      "summary": "핵심 내용 요약 (수치 포함, 3~5문장)",
-      "url": "https://실제확인된URL 또는 null",
-      "source": "연합뉴스"
+      "summary": "상세 요약 (수치 포함, 3~5문장)",
+      "url": "위 목록에서 복사한 URL 그대로",
+      "source": "언론사명"
     }}
   ]
 }}
 """
 
-def fetch_news_from_gemini():
-    api_key = os.environ.get('GEMINI_API_KEY')
-    if not api_key:
-        raise EnvironmentError("GEMINI_API_KEY 없음")
-
-    print("📰 [1단계] Gemini로 오늘의 뉴스 수집 중...")
-
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key={api_key}"
     payload = json.dumps({
-        "contents": [{"parts": [{"text": GEMINI_NEWS_PROMPT}]}],
-        "tools": [{"google_search": {}}],
-        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 4000}
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 4000}
     }).encode("utf-8")
 
-    req = urllib.request.Request(
-        url,
-        data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST"
-    )
+    req = urllib.request.Request(url, data=payload,
+        headers={"Content-Type": "application/json"}, method="POST")
+
     with urllib.request.urlopen(req) as res:
         data = json.loads(res.read().decode())
 
-    # 응답 구조 디버그 출력
     candidate = data["candidates"][0]
     print(f"  finishReason: {candidate.get('finishReason', 'unknown')}")
     if "content" not in candidate:
-        print(f"  ⚠️ content 없음. candidate 키: {list(candidate.keys())}")
-        print(f"  전체 응답: {json.dumps(data, ensure_ascii=False)[:500]}")
-        raise ValueError("Gemini content 없음 — finishReason 확인 필요")
+        raise ValueError("Gemini content 없음")
 
-    # 검색 결과가 포함된 응답에서 텍스트만 추출
     raw = ""
-    for part in data["candidates"][0]["content"]["parts"]:
+    for part in candidate["content"]["parts"]:
         if "text" in part:
             raw += part["text"]
 
     print(f"  Gemini 응답 길이: {len(raw)}자")
 
-    # JSON 블록 정확히 추출 (중첩 중괄호 처리)
     start = raw.find('{')
     if start == -1:
         raise ValueError("Gemini JSON { 없음:\n" + raw[:300])
@@ -127,12 +195,25 @@ def fetch_news_from_gemini():
     except json.JSONDecodeError:
         cleaned = raw[start:end].replace('\n', ' ').replace('\r', '')
         news_data = json.loads(cleaned)
-    news_list = news_data.get("news", [])
 
-    print(f"  ✅ 뉴스 {len(news_list)}개 수집 완료:")
+    news_list = news_data.get("news", [])[:5]
+
+    # URL이 후보 목록에 있는 것인지 검증 + 없으면 후보에서 매칭
+    candidate_urls = {c['url'] for c in candidates}
+    for n in news_list:
+        if n.get('url') not in candidate_urls:
+            # 제목으로 후보에서 찾기
+            for c in candidates:
+                if c['title'][:10] in n['title'] or n['title'][:10] in c['title']:
+                    n['url'] = c['url']
+                    break
+            else:
+                n['url'] = None  # 매칭 실패시 null
+
+    print(f"  ✅ 뉴스 {len(news_list)}개 선정 완료:")
     for i, n in enumerate(news_list, 1):
         print(f"    {i}. {n['title']}")
-        print(f"       🔗 {n.get('url', 'URL 없음')}")
+        print(f"       🔗 {n.get('url') or '링크 없음'}")
 
     return news_list
 
@@ -309,12 +390,19 @@ if __name__ == '__main__':
     if not os.environ.get('ANTHROPIC_API_KEY'):
         raise EnvironmentError("ANTHROPIC_API_KEY 없음")
     if not os.environ.get('GEMINI_API_KEY'):
-        raise EnvironmentError("GEMINI_API_KEY 없음\nGoogle AI Studio에서 발급: https://aistudio.google.com/apikey")
+        raise EnvironmentError("GEMINI_API_KEY 없음")
+    if not os.environ.get('NAVER_CLIENT_ID'):
+        raise EnvironmentError("NAVER_CLIENT_ID 없음")
+    if not os.environ.get('NAVER_CLIENT_SECRET'):
+        raise EnvironmentError("NAVER_CLIENT_SECRET 없음")
 
-    # 1단계: 뉴스 수집
-    news_list = fetch_news_from_gemini()
+    # 1단계: 네이버로 뉴스 후보 수집
+    candidates = fetch_news_from_naver()
 
-    # 2단계: 퀴즈 생성
+    # 2단계: Gemini로 5개 선정 + 요약
+    news_list = select_news_with_gemini(candidates)
+
+    # 3단계: Claude로 퀴즈 생성
     quiz_data = fetch_quiz_from_claude(news_list)
 
     # 저장
