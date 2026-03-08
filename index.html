@@ -473,10 +473,12 @@ function pick(idx) {
     `<span class="tip-label">💡 한 줄 해설</span>${q.exp}`;
   document.getElementById('explanation').className = 'explanation show';
 
-  // 기사 링크
+  // 기사 링크 — 유효한 URL만 표시
   const linkEl = document.getElementById('articleLink');
-  if (q.article_url) {
-    linkEl.href = q.article_url;
+  const url = q.article_url;
+  const isValidUrl = url && url !== 'null' && url !== '' && url.startsWith('http');
+  if (isValidUrl) {
+    linkEl.href = url;
     linkEl.textContent = q.article_title || '관련 기사 보기';
     linkEl.className = 'article-link show';
   } else {

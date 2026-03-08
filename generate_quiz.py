@@ -31,10 +31,26 @@ GEMINI_NEWS_PROMPT = f"""
 - 금리·환율·주가·무역·기업 실적·물가 등 생활과 연결된 것
 - 숫자/금액/퍼센트가 등장하는 구체적인 뉴스
 
+[허용 출처] 아래 목록에 있는 언론사 기사만 사용할 것
+국내 일간지: 조선일보, 중앙일보, 동아일보, 한겨레, 서울신문, 한국일보, 세계일보
+국내 경제지: 매일경제, 한국경제, 서울경제, 뉴스토마토
+국내 통신사: 연합뉴스, 연합인포맥스
+외신: The Economist, Financial Times, New York Times, The Guardian, Reuters, Bloomberg
+위 목록에 없는 출처(네이버뉴스, 다음뉴스, 유튜브, 블로그, 커뮤니티 등)는 절대 사용 금지
+
+[URL 규칙] ★ 매우 중요
+- Google Search로 직접 검색해서 실제로 접속 가능한 URL만 사용할 것
+- 검색 결과에서 해당 기사를 직접 확인한 URL만 넣을 것
+- URL을 추측하거나 임의로 만들지 말 것
+- 확인되지 않은 URL이면 url 필드를 null로 설정
+- 연합뉴스 URL 형식 예시: https://www.yna.co.kr/view/AKR20260308XXXXXXX
+- 한국경제 URL 형식 예시: https://www.hankyung.com/article/XXXXXXXXXX
+- 조선일보 URL 형식 예시: https://www.chosun.com/economy/XXXX/XX/XX/XXXXXXXXXX/
+
 [각 뉴스 항목에 포함할 것]
 1. 제목
 2. 핵심 내용 요약 (3~5문장, 구체적 수치 반드시 포함)
-3. 실제 기사 URL (검색해서 실제 존재하는 URL만)
+3. 실제 확인된 기사 URL (확인 불가시 null)
 4. 출처 언론사명
 
 [출력] JSON만, 다른 텍스트 없이:
@@ -43,7 +59,7 @@ GEMINI_NEWS_PROMPT = f"""
     {{
       "title": "기사 제목",
       "summary": "핵심 내용 요약 (수치 포함, 3~5문장)",
-      "url": "https://실제기사URL",
+      "url": "https://실제확인된URL 또는 null",
       "source": "연합뉴스"
     }}
   ]
