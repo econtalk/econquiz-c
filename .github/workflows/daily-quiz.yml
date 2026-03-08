@@ -7,7 +7,7 @@ name: 🗞️ 오늘의 경제 퀴즈 자동 생성
 
 on:
   schedule:
-    - cron: '0 21 * * *'   # 매일 UTC 21:00 = 한국시간 06:00
+    - cron: '0 11 * * *'   # 매일 UTC 11:00 = 미국 동부시간(ET) 06:00
   workflow_dispatch:        # 수동 실행 버튼도 활성화 (테스트용)
 
 permissions:
@@ -32,12 +32,26 @@ jobs:
       - name: 📦 anthropic 패키지 설치
         run: pip install anthropic
 
+      # 3.5 Secrets 주입 확인 (디버그용 — 확인 후 삭제)
+      - name: 🔍 환경변수 확인
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY:    ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          echo "ANTHROPIC_API_KEY 길이: ${#ANTHROPIC_API_KEY}"
+          echo "GEMINI_API_KEY 길이: ${#GEMINI_API_KEY}"
+
       # 4. 퀴즈 생성 스크립트 실행
-      #    ANTHROPIC_API_KEY는 GitHub Secrets에서 불러옴
       - name: 🤖 퀴즈 생성
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python generate_quiz.py
+          GEMINI_API_KEY:    ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python generate_quiz.py
+          echo "--- 생성된 파일 확인 ---"
+          ls -la quiz_today.json
+          echo "--- JSON 첫 줄 확인 ---"
+          head -3 quiz_today.json
 
       # 5. 생성된 quiz_today.json을 저장소에 커밋 & 푸시
       - name: 💾 퀴즈 파일 저장
