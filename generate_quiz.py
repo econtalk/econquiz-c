@@ -61,7 +61,7 @@ def fetch_news_from_gemini():
     payload = json.dumps({
         "contents": [{"parts": [{"text": GEMINI_NEWS_PROMPT}]}],
         "tools": [{"google_search": {}}],
-        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 5000}
+        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 4000}
     }).encode("utf-8")
 
     req = urllib.request.Request(
@@ -72,6 +72,14 @@ def fetch_news_from_gemini():
     )
     with urllib.request.urlopen(req) as res:
         data = json.loads(res.read().decode())
+
+    # 응답 구조 디버그 출력
+    candidate = data["candidates"][0]
+    print(f"  finishReason: {candidate.get('finishReason', 'unknown')}")
+    if "content" not in candidate:
+        print(f"  ⚠️ content 없음. candidate 키: {list(candidate.keys())}")
+        print(f"  전체 응답: {json.dumps(data, ensure_ascii=False)[:500]}")
+        raise ValueError("Gemini content 없음 — finishReason 확인 필요")
 
     # 검색 결과가 포함된 응답에서 텍스트만 추출
     raw = ""
