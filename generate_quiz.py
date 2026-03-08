@@ -57,7 +57,7 @@ def fetch_news_from_gemini():
 
     print("📰 [1단계] Gemini로 오늘의 뉴스 수집 중...")
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key={api_key}"
     payload = json.dumps({
         "contents": [{"parts": [{"text": GEMINI_NEWS_PROMPT}]}],
         "generationConfig": {"temperature": 0.3, "maxOutputTokens": 2000}
