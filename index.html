@@ -1029,13 +1029,15 @@ async function init() {
     initDots();
     render();
   } catch (e) {
+    console.error('퀴즈 로딩 오류:', e);
     document.getElementById('loadingArea').innerHTML = `
       <div style="text-align:center;padding:40px 20px">
         <div style="font-size:48px;margin-bottom:16px">🌅</div>
         <div style="font-size:16px;font-weight:900;color:var(--text);margin-bottom:8px">오늘의 퀴즈 준비 중이에요</div>
-        <div style="font-size:13px;color:var(--sub);line-height:1.7;margin-bottom:24px">
+        <div style="font-size:13px;color:var(--sub);line-height:1.7;margin-bottom:8px">
           매일 오전 6시에 새 퀴즈가 업데이트돼요.<br>잠시 후 다시 열어주세요! 🙏
         </div>
+        <div style="font-size:11px;color:var(--sub);opacity:0.6;margin-bottom:20px;word-break:break-all">${e.message}</div>
         <button onclick="location.reload()" style="padding:12px 28px;background:var(--accent);color:#000;border:none;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit">새로고침</button>
       </div>`;
   }
@@ -1044,10 +1046,29 @@ async function init() {
 // quiz_today.json 로드
 async function loadJSON() {
   const res = await fetch(`quiz_today.json?t=${Date.now()}`);
-  if (!res.ok) throw new Error('파일 없음');
-  const data = await res.json();
-  if (!data.quizzes) throw new Error('퀴즈 없음');
-  return data;
+  if (!res.ok) throw new Error(`quiz_today.json 없음 (${res.status})`);
+
+  let data;
+  try {
+    data = await res.json();
+  } catch(e) {
+    throw new Error('JSON 파싱 실패: ' + e.message);
+  }
+
+  // 구 포맷: quizzes가 배열
+  if (Array.isArray(data.quizzes)) {
+    if (data.quizzes.length === 0) throw new Error('퀴즈 배열이 비어있어요');
+    return data;
+  }
+
+  // 신 포맷: quizzes가 난이도별 객체
+  if (data.quizzes && typeof data.quizzes === 'object') {
+    const total = Object.values(data.quizzes).reduce((s, a) => s + (a?.length || 0), 0);
+    if (total === 0) throw new Error('퀴즈 풀이 비어있어요');
+    return data;
+  }
+
+  throw new Error('quiz_today.json 형식 오류: quizzes 필드 없음');
 }
 
 // ═══════════════════════════════════════
