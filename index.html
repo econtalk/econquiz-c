@@ -261,6 +261,28 @@
   }
   .retry-btn:hover { opacity: .88; }
 
+  /* ── 라이트 테마 ── */
+  body.theme-light {
+    --bg: #f4f5f9;
+    --card: #ffffff;
+    --accent: #d4a017;
+    --correct: #1a9e5a;
+    --wrong: #e03030;
+    --text: #1a1c2e;
+    --sub: #6b7280;
+    --border: #e2e4ed;
+    --expert: #7c3aed;
+  }
+  body.theme-light .tab-bar {
+    background: rgba(255,255,255,0.96);
+    border-top-color: #e2e4ed;
+  }
+  body.theme-light .opt { color: var(--text); }
+  body.theme-light .settings-select { background: #f4f5f9; color: var(--text); }
+  body.theme-light .level-btn { color: var(--sub); }
+  body.theme-light .modal { background: #fff; }
+  body.theme-light .modal-input { background: #f4f5f9; color: var(--text); border-color: var(--border); }
+
   @keyframes spin    { to { transform: rotate(360deg); } }
   @keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
   @keyframes fadeIn  { from { opacity:0; } to { opacity:1; } }
@@ -367,6 +389,116 @@
     display: block;
   }
   .stat-label { font-size: 11px; color: var(--sub); margin-top: 4px; font-weight: 700; }
+
+  /* ── 설정 탭 ── */
+  .settings-section {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; margin-bottom: 14px; overflow: hidden;
+  }
+  .settings-section-title {
+    font-size: 11px; font-weight: 900; color: var(--sub);
+    letter-spacing: 1.5px; padding: 14px 16px 8px;
+  }
+  .settings-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; border-top: 1px solid var(--border); gap: 12px;
+  }
+  .settings-row-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+  .settings-row-icon {
+    font-size: 18px; width: 32px; height: 32px; display: flex;
+    align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.05); border-radius: 8px; flex-shrink: 0;
+  }
+  .settings-row-label { font-size: 14px; font-weight: 700; color: var(--text); }
+  .settings-row-sub   { font-size: 11px; color: var(--sub); margin-top: 2px; }
+  .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0; background: var(--border);
+    border-radius: 24px; cursor: pointer; transition: background .2s;
+  }
+  .toggle-slider::before {
+    content: ''; position: absolute; width: 18px; height: 18px;
+    left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform .2s;
+  }
+  .toggle input:checked + .toggle-slider { background: var(--accent); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+  .settings-select {
+    background: rgba(255,255,255,0.07); border: 1px solid var(--border);
+    color: var(--text); border-radius: 8px; padding: 6px 10px;
+    font-size: 13px; font-family: inherit; cursor: pointer; flex-shrink: 0;
+  }
+  .settings-slider { flex: 1; accent-color: var(--accent); cursor: pointer; }
+  .settings-slider-val { font-size: 13px; font-weight: 900; color: var(--accent); min-width: 28px; text-align: right; }
+  .level-btns { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 16px 14px; }
+  .level-btn {
+    padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 900;
+    font-family: inherit; cursor: pointer; border: 1.5px solid var(--border);
+    background: transparent; color: var(--sub); transition: all .18s;
+  }
+  .level-btn.sel-easy   { border-color:var(--correct); background:rgba(61,232,138,.12); color:var(--correct); }
+  .level-btn.sel-mid    { border-color:var(--accent);  background:rgba(245,200,66,.12); color:var(--accent); }
+  .level-btn.sel-hard   { border-color:#ff8c42;        background:rgba(255,140,66,.12); color:#ff8c42; }
+  .level-btn.sel-expert { border-color:var(--expert);  background:rgba(192,132,252,.12);color:var(--expert); }
+  .level-btn.sel-master { border-color:#60a5fa;        background:rgba(96,165,250,.12); color:#60a5fa; }
+  .login-box {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px 20px; margin-bottom: 14px; text-align: center;
+  }
+  .login-avatar { font-size: 48px; margin-bottom: 12px; }
+  .login-name   { font-size: 16px; font-weight: 900; color: #fff; margin-bottom: 4px; }
+  .login-email  { font-size: 12px; color: var(--sub); margin-bottom: 16px; }
+  .oauth-btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 13px 16px; border-radius: 12px; font-size: 14px; font-weight: 700;
+    font-family: inherit; cursor: pointer; border: 1.5px solid var(--border);
+    background: transparent; color: var(--text); transition: all .18s; width: 100%; margin-bottom: 10px;
+  }
+  .oauth-btn:hover  { background: rgba(255,255,255,0.06); }
+  .oauth-btn.google { border-color: rgba(234,67,53,0.5); }
+  .oauth-btn.naver  { border-color: rgba(3,199,90,0.5); }
+  .oauth-btn.kakao  { border-color: rgba(254,229,0,0.5); background: rgba(254,229,0,0.04); }
+  .oauth-btn.email  { border-color: rgba(99,179,237,0.5); }
+  .oauth-btn-icon   { font-size: 20px; }
+  .logout-btn {
+    padding: 11px 28px; background: transparent;
+    border: 1px solid rgba(255,79,79,0.4); border-radius: 10px;
+    color: var(--wrong); font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer;
+  }
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    z-index: 200; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 28px 24px; width: 100%; max-width: 360px;
+    animation: slideIn .25s ease;
+  }
+  .modal-title { font-size: 18px; font-weight: 900; color: #fff; margin-bottom: 20px; }
+  .modal-input {
+    width: 100%; padding: 12px 14px; background: rgba(255,255,255,0.06);
+    border: 1.5px solid var(--border); border-radius: 10px;
+    color: var(--text); font-size: 14px; font-family: inherit;
+    margin-bottom: 12px; outline: none; transition: border-color .18s; display: block;
+  }
+  .modal-input:focus { border-color: var(--accent); }
+  .modal-submit {
+    width: 100%; padding: 13px; background: var(--accent); color: #000;
+    border: none; border-radius: 10px; font-size: 15px; font-weight: 900;
+    font-family: inherit; cursor: pointer; margin-top: 4px;
+  }
+  .modal-close {
+    width: 100%; padding: 11px; background: transparent; border: 1px solid var(--border);
+    border-radius: 10px; color: var(--sub); font-size: 13px; font-family: inherit;
+    cursor: pointer; margin-top: 8px;
+  }
+  .modal-error { font-size: 12px; color: var(--wrong); margin-bottom: 8px; min-height: 16px; }
+  body.theme-light {
+    --bg: #f0f2f8; --card: #ffffff; --text: #1a1a2e;
+    --sub: #6b7280; --border: #dde1f0; --accent: #d97706;
+  }
+  body.theme-light .tab-bar { background: rgba(240,242,248,0.96); }
 </style>
 </head>
 <body>
@@ -483,14 +615,151 @@
       <div class="header-tag">⚙️ SETTINGS</div>
       <h1>설정</h1>
     </div>
-    <div class="coming-soon">
-      <div class="coming-soon-icon">⚙️</div>
-      <div class="coming-soon-title">설정 준비 중</div>
-      <div class="coming-soon-sub">
-        알림, 테마, 언어 등 다양한 설정 기능이<br>
-        곧 추가될 예정이에요!
+
+    <!-- 로그인 섹션 -->
+    <div class="login-box" id="loginBox">
+      <div id="loginArea">
+        <div class="login-avatar">👤</div>
+        <div class="login-name">로그인하면 더 많은 기능을!</div>
+        <div class="login-email" style="margin-bottom:20px">통계·오답노트를 기기 간 동기화해요</div>
+        <button class="oauth-btn google" onclick="loginGoogle()">
+          <span class="oauth-btn-icon">🔵</span> Google로 로그인
+        </button>
+        <button class="oauth-btn naver" onclick="loginNaver()">
+          <span class="oauth-btn-icon">🟢</span> 네이버로 로그인
+          <span style="font-size:10px;color:var(--sub);margin-left:4px">(준비 중)</span>
+        </button>
+        <button class="oauth-btn kakao" onclick="loginKakao()">
+          <span class="oauth-btn-icon">🟡</span> 카카오로 로그인
+          <span style="font-size:10px;color:var(--sub);margin-left:4px">(준비 중)</span>
+        </button>
+        <button class="oauth-btn email" onclick="openEmailModal()">
+          <span class="oauth-btn-icon">📧</span> 이메일로 로그인
+        </button>
       </div>
-      <span class="coming-soon-badge">COMING SOON</span>
+      <div id="loggedArea" style="display:none">
+        <div class="login-avatar" id="userAvatar">😊</div>
+        <div class="login-name" id="userName">사용자</div>
+        <div class="login-email" id="userEmail">-</div>
+        <button class="logout-btn" onclick="logoutUser()">로그아웃</button>
+      </div>
+    </div>
+
+    <!-- 퀴즈 알림 -->
+    <div class="settings-section">
+      <div class="settings-section-title">🔔 퀴즈 알림</div>
+      <div class="settings-row">
+        <div class="settings-row-left">
+          <div class="settings-row-icon">🔔</div>
+          <div>
+            <div class="settings-row-label">매일 알림 받기</div>
+            <div class="settings-row-sub">지정한 시간에 퀴즈 알림을 보내요</div>
+          </div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="notifToggle" onchange="saveSettings()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-left">
+          <div class="settings-row-icon">🕐</div>
+          <div>
+            <div class="settings-row-label">알림 시간</div>
+            <div class="settings-row-sub">매일 이 시간에 알림이 와요</div>
+          </div>
+        </div>
+        <input type="time" class="settings-select" id="notifTime" value="08:00" onchange="saveSettings()" style="min-width:100px">
+      </div>
+    </div>
+
+    <!-- 퀴즈 설정 -->
+    <div class="settings-section">
+      <div class="settings-section-title">📝 퀴즈 설정</div>
+      <div class="settings-row">
+        <div class="settings-row-left">
+          <div class="settings-row-icon">🔢</div>
+          <div>
+            <div class="settings-row-label">문제 수</div>
+            <div class="settings-row-sub">한 번에 풀 문제 개수 (1~10)</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex:1;max-width:140px">
+          <input type="range" class="settings-slider" id="quizCount" min="1" max="10" value="5"
+            oninput="document.getElementById('quizCountVal').textContent=this.value; saveSettings()">
+          <span class="settings-slider-val" id="quizCountVal">5</span>
+        </div>
+      </div>
+      <div class="settings-row" style="flex-direction:column;align-items:flex-start">
+        <div style="display:flex;align-items:center;gap:10px;width:100%">
+          <div class="settings-row-icon">🎯</div>
+          <div>
+            <div class="settings-row-label">선호 난이도</div>
+            <div class="settings-row-sub">선택한 난이도 위주로, 주변 난이도도 섞어서 출제</div>
+          </div>
+        </div>
+        <div class="level-btns" id="levelBtns">
+          <button class="level-btn" data-level="lv-easy"   onclick="toggleLevel(this)">🌱 입문</button>
+          <button class="level-btn" data-level="lv-mid"    onclick="toggleLevel(this)">🔥 초급</button>
+          <button class="level-btn sel-hard" data-level="lv-hard"   onclick="toggleLevel(this)">⚡ 중급</button>
+          <button class="level-btn" data-level="lv-expert" onclick="toggleLevel(this)">💎 고급</button>
+          <button class="level-btn" data-level="lv-master" onclick="toggleLevel(this)">👑 최고급</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 화면 테마 -->
+    <div class="settings-section">
+      <div class="settings-section-title">🎨 화면 테마</div>
+      <div class="settings-row">
+        <div class="settings-row-left">
+          <div class="settings-row-icon">🌓</div>
+          <div>
+            <div class="settings-row-label">테마 선택</div>
+            <div class="settings-row-sub">라이트 / 다크 / 시스템 설정 따라가기</div>
+          </div>
+        </div>
+        <select class="settings-select" id="themeSelect" onchange="applyTheme(this.value); saveSettings()">
+          <option value="dark" selected>🌙 다크</option>
+          <option value="light">☀️ 라이트</option>
+          <option value="system">🖥️ 시스템</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 앱 정보 -->
+    <div class="settings-section">
+      <div class="settings-section-title">ℹ️ 앱 정보</div>
+      <div class="settings-row">
+        <div class="settings-row-left">
+          <div class="settings-row-icon">📌</div>
+          <div><div class="settings-row-label">버전</div></div>
+        </div>
+        <span style="font-size:13px;color:var(--sub)">v1.0.0</span>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-left">
+          <div class="settings-row-icon">🗑️</div>
+          <div>
+            <div class="settings-row-label">데이터 초기화</div>
+            <div class="settings-row-sub">모든 통계·오답노트를 삭제해요</div>
+          </div>
+        </div>
+        <button onclick="resetAllData()" style="padding:7px 14px;background:transparent;border:1px solid rgba(255,79,79,0.4);border-radius:8px;color:var(--wrong);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">초기화</button>
+      </div>
+    </div>
+
+  </div><!-- /page-settings -->
+
+  <!-- 이메일 로그인 모달 -->
+  <div class="modal-overlay" id="emailModal">
+    <div class="modal">
+      <div class="modal-title">📧 이메일 로그인</div>
+      <div class="modal-error" id="emailError"></div>
+      <input class="modal-input" type="email"    id="emailInput"    placeholder="이메일">
+      <input class="modal-input" type="password" id="passwordInput" placeholder="비밀번호 (6자 이상)">
+      <button class="modal-submit" onclick="loginEmail()">로그인 / 회원가입</button>
+      <button class="modal-close"  onclick="closeEmailModal()">취소</button>
     </div>
   </div>
 
@@ -869,6 +1138,259 @@ function restart() {
 }
 
 // ═══════════════════════════════════════
+// 설정 저장/로드
+// ═══════════════════════════════════════
+let userSettings = JSON.parse(localStorage.getItem('userSettings') || '{}');
+const DEFAULTS = { notif: false, notifTime: '08:00', quizCount: 5, levels: ['lv-hard'], theme: 'dark' };
+
+function getSetting(key) {
+  return userSettings[key] !== undefined ? userSettings[key] : DEFAULTS[key];
+}
+
+function saveSettings() {
+  userSettings.notif      = document.getElementById('notifToggle').checked;
+  userSettings.notifTime  = document.getElementById('notifTime').value;
+  userSettings.quizCount  = parseInt(document.getElementById('quizCount').value);
+  userSettings.levels     = getSelectedLevels();
+  userSettings.theme      = document.getElementById('themeSelect').value;
+  localStorage.setItem('userSettings', JSON.stringify(userSettings));
+}
+
+function loadSettingsUI() {
+  document.getElementById('notifToggle').checked         = getSetting('notif');
+  document.getElementById('notifTime').value             = getSetting('notifTime');
+  document.getElementById('quizCount').value             = getSetting('quizCount');
+  document.getElementById('quizCountVal').textContent    = getSetting('quizCount');
+  document.getElementById('themeSelect').value           = getSetting('theme');
+  applyTheme(getSetting('theme'));
+
+  // 난이도 버튼 복원
+  const saved = getSetting('levels');
+  document.querySelectorAll('.level-btn').forEach(btn => {
+    const lv = btn.dataset.level;
+    const cls = lv.replace('lv-', 'sel-');
+    btn.classList.toggle(cls, saved.includes(lv));
+  });
+}
+
+// ─── 테마 ───
+function applyTheme(theme) {
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark = theme === 'dark' || (theme === 'system' && prefersDark);
+  document.body.classList.toggle('theme-light', !isDark);
+}
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (getSetting('theme') === 'system') applyTheme('system');
+});
+
+// ─── 난이도 버튼 토글 ───
+function toggleLevel(btn) {
+  const lv  = btn.dataset.level;
+  const cls = lv.replace('lv-', 'sel-');
+  const selected = getSelectedLevels();
+  if (selected.includes(lv) && selected.length === 1) return; // 최소 1개 유지
+  btn.classList.toggle(cls);
+  saveSettings();
+}
+
+function getSelectedLevels() {
+  const sel = [];
+  document.querySelectorAll('.level-btn').forEach(btn => {
+    const lv  = btn.dataset.level;
+    const cls = lv.replace('lv-', 'sel-');
+    if (btn.classList.contains(cls)) sel.push(lv);
+  });
+  return sel.length ? sel : ['lv-hard'];
+}
+
+// ─── 데이터 초기화 ───
+function resetAllData() {
+  if (confirm('모든 통계와 오답노트가 삭제돼요. 계속할까요?')) {
+    wrongList  = [];
+    statsData  = { total: 0, correct: 0, streak: 0, lastDate: '' };
+    localStorage.removeItem('wrongList');
+    localStorage.removeItem('statsData');
+    alert('초기화 완료!');
+  }
+}
+
+// ═══════════════════════════════════════
+// 난이도 가중치 — 선호 난이도 중심, 주변도 섞기
+// ═══════════════════════════════════════
+const LEVEL_ORDER = ['lv-easy','lv-mid','lv-hard','lv-expert','lv-master'];
+
+function getWeightedLevel() {
+  const preferred = getSetting('levels');
+  const weights = {};
+  LEVEL_ORDER.forEach((lv, i) => {
+    weights[lv] = 1; // 기본 가중치
+    preferred.forEach(p => {
+      const dist = Math.abs(LEVEL_ORDER.indexOf(p) - i);
+      if (dist === 0) weights[lv] = (weights[lv] || 0) + 10; // 선호: +10
+      if (dist === 1) weights[lv] = (weights[lv] || 0) + 3;  // 인접: +3
+    });
+  });
+  const total = Object.values(weights).reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (const [lv, w] of Object.entries(weights)) {
+    r -= w;
+    if (r <= 0) return lv;
+  }
+  return preferred[0];
+}
+
+// ═══════════════════════════════════════
+// OAuth 보안 유틸 (PKCE + state)
+// ═══════════════════════════════════════
+function generateSecureRandom(len = 32) {
+  const arr = new Uint8Array(len);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function setOAuthState() {
+  const state = generateSecureRandom(16);
+  sessionStorage.setItem('oauth_state', state);
+  sessionStorage.setItem('oauth_state_exp', Date.now() + 10 * 60 * 1000); // 10분 유효
+  return state;
+}
+
+function verifyOAuthState(returnedState) {
+  const stored  = sessionStorage.getItem('oauth_state');
+  const exp     = parseInt(sessionStorage.getItem('oauth_state_exp') || '0');
+  sessionStorage.removeItem('oauth_state');
+  sessionStorage.removeItem('oauth_state_exp');
+  if (!stored || !returnedState) return false;
+  if (Date.now() > exp) return false;
+  // timing-safe 비교 (브라우저에서 가능한 수준)
+  if (stored.length !== returnedState.length) return false;
+  let diff = 0;
+  for (let i = 0; i < stored.length; i++) diff |= stored.charCodeAt(i) ^ returnedState.charCodeAt(i);
+  return diff === 0;
+}
+
+// 이메일 유효성 검사 (RFC 5322 간략 버전)
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+}
+
+// XSS 방지용 텍스트 이스케이프
+function escapeHtml(str) {
+  return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ═══════════════════════════════════════
+// Firebase Auth (Google + Email)
+// ═══════════════════════════════════════
+// ★ 아래 firebaseConfig를 본인의 Firebase 프로젝트 설정값으로 교체하세요
+//   https://console.firebase.google.com → 프로젝트 설정 → 앱 추가(웹)
+const FIREBASE_CONFIG = {
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT.firebaseapp.com",
+  projectId:         "YOUR_PROJECT_ID",
+  storageBucket:     "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID"
+};
+
+let firebaseApp = null, firebaseAuth = null;
+
+async function initFirebase() {
+  if (firebaseApp) return true;
+  try {
+    const { initializeApp }                                   = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const { getAuth, onAuthStateChanged, GoogleAuthProvider,
+            signInWithPopup, signInWithEmailAndPassword,
+            createUserWithEmailAndPassword, signOut }         = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+
+    if (FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') return false; // 미설정
+
+    firebaseApp  = initializeApp(FIREBASE_CONFIG);
+    firebaseAuth = getAuth(firebaseApp);
+
+    // 로그인 상태 감지
+    onAuthStateChanged(firebaseAuth, user => {
+      if (user) {
+        document.getElementById('loginArea').style.display   = 'none';
+        document.getElementById('loggedArea').style.display  = 'block';
+        document.getElementById('userName').textContent      = user.displayName || '사용자';
+        document.getElementById('userEmail').textContent     = user.email || '';
+        document.getElementById('userAvatar').textContent    = user.photoURL ? '🖼️' : '😊';
+      } else {
+        document.getElementById('loginArea').style.display   = 'block';
+        document.getElementById('loggedArea').style.display  = 'none';
+      }
+    });
+
+    // 전역에 auth 함수 저장
+    window._fbAuth = { getAuth, GoogleAuthProvider, signInWithPopup,
+      signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut };
+    return true;
+  } catch (e) {
+    console.error('Firebase 초기화 실패:', e);
+    return false;
+  }
+}
+
+async function loginGoogle() {
+  const ok = await initFirebase();
+  if (!ok) { alert('Firebase 설정이 필요해요.\nindex.html의 FIREBASE_CONFIG를 채워주세요.'); return; }
+  try {
+    const provider = new window._fbAuth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    // state 파라미터로 CSRF 방지 (Firebase popup은 내부적으로 처리하나 명시적 기록)
+    setOAuthState();
+    await window._fbAuth.signInWithPopup(firebaseAuth, provider);
+  } catch (e) {
+    if (e.code !== 'auth/popup-closed-by-user') alert('로그인 실패: ' + escapeHtml(e.message));
+  }
+}
+
+function loginNaver() { alert('네이버 로그인은 준비 중이에요! Firebase Custom Token 연동 후 활성화될 예정이에요.'); }
+function loginKakao() { alert('카카오 로그인은 준비 중이에요! Firebase Custom Token 연동 후 활성화될 예정이에요.'); }
+
+function openEmailModal()  { document.getElementById('emailModal').classList.add('show'); document.getElementById('emailError').textContent = ''; }
+function closeEmailModal() { document.getElementById('emailModal').classList.remove('show'); }
+
+async function loginEmail() {
+  const ok = await initFirebase();
+  if (!ok) { alert('Firebase 설정이 필요해요.'); return; }
+  const email = document.getElementById('emailInput').value.trim();
+  const pw    = document.getElementById('passwordInput').value;
+  const errEl = document.getElementById('emailError');
+  errEl.textContent = '';
+
+  // 입력 검증
+  if (!email || !pw)          { errEl.textContent = '이메일과 비밀번호를 입력해주세요.'; return; }
+  if (!isValidEmail(email))   { errEl.textContent = '올바른 이메일 형식이 아니에요.'; return; }
+  if (pw.length < 8)          { errEl.textContent = '비밀번호는 8자 이상이에요.'; return; }
+  if (!/[A-Za-z]/.test(pw) || !/[0-9]/.test(pw)) {
+    errEl.textContent = '비밀번호에 영문자와 숫자를 모두 포함해주세요.'; return;
+  }
+
+  try {
+    await window._fbAuth.signInWithEmailAndPassword(firebaseAuth, email, pw);
+    closeEmailModal();
+  } catch (e) {
+    if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
+      try {
+        await window._fbAuth.createUserWithEmailAndPassword(firebaseAuth, email, pw);
+        closeEmailModal();
+      } catch (e2) { errEl.textContent = '회원가입 실패: ' + escapeHtml(e2.message); }
+    } else {
+      errEl.textContent = '로그인 실패: ' + escapeHtml(e.message);
+    }
+  }
+}
+
+async function logoutUser() {
+  const ok = await initFirebase();
+  if (!ok || !firebaseAuth) return;
+  if (confirm('로그아웃할까요?')) await window._fbAuth.signOut(firebaseAuth);
+}
+
+// ═══════════════════════════════════════
 // PWA Service Worker
 // ═══════════════════════════════════════
 if ('serviceWorker' in navigator) {
@@ -876,6 +1398,8 @@ if ('serviceWorker' in navigator) {
 }
 
 // 시작
+loadSettingsUI();
+initFirebase(); // Firebase 미리 초기화 (설정값 있을 때만 실제 동작)
 init();
 </script>
 </body>
