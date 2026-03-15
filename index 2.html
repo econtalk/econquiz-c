@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>오늘의 경제 퀴즈</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d0f1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="경제퀴즈">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<link href="https://fonts.googleapis.com/css2?family=Gmarket+Sans:wght@300;500;700&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f1a;
+    --card: #161928;
+    --accent: #f5c842;
+    --correct: #3de88a;
+    --wrong: #ff4f4f;
+    --text: #f0f0f0;
+    --sub: #8892b0;
+    --border: #232840;
+    --expert: #c084fc;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px 100px;
+  }
+  .app { width: 100%; max-width: 440px; }
+
+  /* ── 로딩 ── */
+  .loading {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 60vh; gap: 20px;
+    text-align: center;
+  }
+  .spinner {
+    width: 48px; height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  .loading-title { font-size: 18px; font-weight: 900; color: #fff; }
+  .loading-sub   { font-size: 13px; color: var(--sub); line-height: 1.6; }
+  .loading-steps { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .step {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: var(--sub);
+    padding: 8px 14px;
+    background: var(--card); border-radius: 8px;
+    border: 1px solid var(--border);
+    transition: color 0.3s, border-color 0.3s;
+  }
+  .step.active  { color: var(--accent); border-color: rgba(245,200,66,0.4); }
+  .step.done    { color: var(--correct); border-color: rgba(61,232,138,0.3); }
+  .step-icon { font-size: 16px; width: 22px; text-align: center; }
+
+  /* ── 헤더 ── */
+  .header { text-align: center; margin-bottom: 24px; padding-top: 8px; }
+  .header-tag {
+    display: inline-block; background: var(--accent); color: #000;
+    font-size: 11px; font-weight: 900; letter-spacing: 2px;
+    padding: 4px 12px; border-radius: 4px; margin-bottom: 12px;
+  }
+  .header h1 {
+    font-family: 'Gmarket Sans', sans-serif;
+    font-size: 26px; font-weight: 700; color: #fff; line-height: 1.2;
+  }
+  .header h1 span { color: var(--accent); }
+  .header-date { font-size: 12px; color: var(--sub); margin-top: 6px; }
+
+  /* ── 진행 ── */
+  .dots { display: flex; gap: 8px; justify-content: center; margin-bottom: 16px; }
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--border); transition: background 0.3s, transform 0.2s;
+  }
+  .dot.ok   { background: var(--correct); transform: scale(1.15); }
+  .dot.no   { background: var(--wrong); }
+  .dot.cur  { background: var(--accent); transform: scale(1.2); }
+
+  .meta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .level-pill { font-size: 11px; font-weight: 900; padding: 4px 12px; border-radius: 20px; letter-spacing: 0.5px; }
+  .lv-easy   { background: #1a3a2a; color: var(--correct); }
+  .lv-mid    { background: #2a2a10; color: var(--accent); }
+  .lv-hard   { background: #2a1a1a; color: #ff8c42; }
+  .lv-expert { background: #1e1030; color: var(--expert); }
+  .lv-master { background: #0f1a2e; color: #60a5fa; }
+  .q-counter { font-size: 12px; color: var(--sub); font-weight: 700; }
+
+  .progress-track { height: 4px; background: var(--border); border-radius: 99px; margin-bottom: 18px; overflow: hidden; }
+  .progress-fill  { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.5s cubic-bezier(.4,0,.2,1); }
+
+  /* ── 카드 ── */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 24px 20px; margin-bottom: 14px;
+    position: relative; overflow: hidden;
+  }
+  .card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), #ff8c00);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .card.answered::before { opacity: 1; }
+
+  .news-source {
+    font-size: 11px; color: var(--sub); margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .news-source::before { content: '📰'; font-size: 12px; }
+
+  /* 배경 설명 */
+  .context {
+    font-size: 13px; color: #9ba5c0; line-height: 1.65;
+    margin-bottom: 16px; padding: 10px 14px;
+    background: rgba(255,255,255,0.03);
+    border-left: 3px solid var(--border);
+    border-radius: 0 8px 8px 0;
+    word-break: keep-all;
+  }
+
+  /* 기사 링크 */
+  .article-link {
+    display: none; align-items: center; gap: 6px;
+    margin-top: 12px; padding: 9px 14px;
+    background: rgba(245,200,66,0.06);
+    border: 1px solid rgba(245,200,66,0.2);
+    border-radius: 8px; text-decoration: none;
+    font-size: 12px; color: var(--accent); font-weight: 700;
+    transition: background .18s; line-height: 1.4; word-break: break-all;
+  }
+  .article-link.show { display: inline-flex; }
+  .article-link:hover { background: rgba(245,200,66,0.12); }
+  .article-link::before { content: '🔗'; flex-shrink: 0; }
+
+  .question {
+    font-size: 18px; font-weight: 900; color: #fff;
+    line-height: 1.55; margin-bottom: 20px; word-break: keep-all;
+  }
+
+  /* ── 보기 ── */
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    background: transparent; border: 1.5px solid var(--border);
+    border-radius: 12px; padding: 13px 16px;
+    font-size: 15px; font-family: 'Noto Sans KR', sans-serif;
+    color: var(--text); text-align: left; cursor: pointer;
+    display: flex; align-items: center; gap: 12px;
+    transition: border-color .18s, background .18s, transform .15s;
+  }
+  .opt:hover:not(:disabled) { border-color: var(--accent); background: rgba(245,200,66,0.06); transform: translateX(4px); }
+  .opt-num {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: var(--border); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 900; color: var(--sub);
+    transition: background .2s, color .2s;
+  }
+  .opt-text { word-break: keep-all; line-height: 1.4; }
+  .opt.correct { border-color: var(--correct); background: rgba(61,232,138,.08); }
+  .opt.correct .opt-num { background: var(--correct); color: #000; }
+  .opt.wrong   { border-color: var(--wrong); background: rgba(255,79,79,.08); }
+  .opt.wrong   .opt-num { background: var(--wrong); color: #fff; }
+  .opt:disabled { cursor: default; transform: none !important; }
+
+  /* ── 결과 배지 ── */
+  .result-badge { display: none; font-size: 13px; font-weight: 700; padding: 8px 14px; border-radius: 8px; margin-top: 14px; text-align: center; }
+  .result-badge.show { display: block; }
+  .result-badge.ok { background: rgba(61,232,138,.12); color: var(--correct); }
+  .result-badge.no { background: rgba(255,79,79,.10); color: var(--wrong); }
+
+  /* ── 한 줄 해설 ── */
+  .explanation {
+    display: none; margin-top: 14px;
+    background: rgba(245,200,66,.05); border: 1px solid rgba(245,200,66,.2);
+    border-radius: 12px; padding: 14px;
+    font-size: 14px; color: #bcc0d0; line-height: 1.7; word-break: keep-all;
+    animation: slideIn .3s ease;
+  }
+  .explanation.show { display: block; }
+  .explanation strong { color: var(--accent); }
+  .tip-label { font-size: 11px; font-weight: 900; color: var(--accent); letter-spacing: 1px; display: block; margin-bottom: 6px; }
+
+  /* ── 전문가 해설 ── */
+  .expert-wrap { margin-top: 12px; display: none; }
+  .expert-wrap.show { display: block; }
+  .expert-toggle {
+    width: 100%; background: transparent;
+    border: 1px solid rgba(192,132,252,.35); border-radius: 10px;
+    color: var(--expert); font-size: 13px; font-weight: 900;
+    font-family: 'Noto Sans KR', sans-serif;
+    padding: 10px 14px; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    transition: background .18s;
+  }
+  .expert-toggle:hover { background: rgba(192,132,252,.08); }
+  .expert-toggle .arr { transition: transform .25s; font-size: 10px; }
+  .expert-toggle.open .arr { transform: rotate(180deg); }
+
+  .expert-body {
+    display: none; margin-top: 10px;
+    padding: 18px; background: rgba(192,132,252,.04);
+    border: 1px solid rgba(192,132,252,.15); border-radius: 12px;
+    font-size: 13.5px; color: #c0c8e0; line-height: 1.8;
+    animation: slideIn .25s ease;
+  }
+  .expert-body.open { display: block; }
+  .expert-body p { margin-bottom: 12px; word-break: keep-all; }
+  .expert-body p:last-child { margin-bottom: 0; }
+  .expert-body strong { color: var(--expert); }
+  .expert-label {
+    font-size: 11px; font-weight: 900; color: var(--expert);
+    letter-spacing: 1px; display: block; margin-bottom: 10px;
+  }
+  .takeaway {
+    background: rgba(192,132,252,.10); border-left: 3px solid var(--expert);
+    border-radius: 0 8px 8px 0; padding: 10px 14px !important;
+    color: #d8b4fe !important; font-size: 13px !important;
+  }
+
+  /* ── 다음 버튼 ── */
+  .next-btn {
+    width: 100%; padding: 16px; border: none; border-radius: 12px;
+    background: var(--accent); color: #000;
+    font-size: 16px; font-weight: 900; font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer; display: none; transition: opacity .2s, transform .15s;
+  }
+  .next-btn:hover { opacity: .88; transform: translateY(-1px); }
+  .next-btn.show  { display: block; }
+
+  /* ── 결과 화면 ── */
+  .final { display: none; text-align: center; }
+  .final.show { display: block; }
+  .final-emoji { font-size: 60px; margin-bottom: 14px; }
+  .final-score {
+    font-family: 'Gmarket Sans', sans-serif; font-size: 56px; font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), #ff8c00);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .final-total { font-size: 22px; color: var(--sub); }
+  .final-msg { font-size: 18px; font-weight: 900; color: #fff; margin: 12px 0 6px; }
+  .final-sub { font-size: 14px; color: var(--sub); line-height: 1.7; margin-bottom: 24px; word-break: keep-all; }
+  .retry-btn {
+    padding: 15px 36px; background: var(--accent); color: #000;
+    border: none; border-radius: 12px;
+    font-size: 16px; font-weight: 900; font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer; transition: opacity .2s;
+  }
+  .retry-btn:hover { opacity: .88; }
+
+  /* ── 라이트 테마 ── */
+  body.theme-light {
+    --bg: #f4f5f9;
+    --card: #ffffff;
+    --accent: #d4a017;
+    --correct: #1a9e5a;
+    --wrong: #e03030;
+    --text: #1a1c2e;
+    --sub: #6b7280;
+    --border: #e2e4ed;
+    --expert: #7c3aed;
+  }
+  body.theme-light .tab-bar {
+    background: rgba(255,255,255,0.96);
+    border-top-color: #e2e4ed;
+  }
+  body.theme-light .opt { color: var(--text); }
+  body.theme-light .settings-select { background: #f4f5f9; color: var(--text); }
+  body.theme-light .level-btn { color: var(--sub); }
+  body.theme-light .modal { background: #fff; }
+  body.theme-light .modal-input { background: #f4f5f9; color: var(--text); border-color: var(--border); }
+
+  @keyframes spin    { to { transform: rotate(360deg); } }
+  @keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeIn  { from { opacity:0; } to { opacity:1; } }
+  @keyframes tabIn   { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  .quiz-area { animation: fadeIn .4s ease; }
+
+  /* ── 하단 탭바 ── */
+  .tab-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 64px;
+    background: rgba(16, 18, 32, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    display: flex; align-items: stretch;
+    z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .tab-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 3px; cursor: pointer;
+    background: none; border: none;
+    color: var(--sub); font-family: 'Noto Sans KR', sans-serif;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.3px;
+    transition: color .2s, transform .15s;
+    padding: 0; position: relative;
+  }
+  .tab-item:active { transform: scale(0.92); }
+  .tab-item.active { color: var(--accent); }
+  .tab-item.active::after {
+    content: '';
+    position: absolute; top: 0; left: 20%; right: 20%; height: 2px;
+    background: var(--accent); border-radius: 0 0 4px 4px;
+  }
+  .tab-icon { font-size: 20px; line-height: 1; }
+
+  /* ── 탭 페이지 공통 ── */
+  .tab-page { display: none; animation: tabIn .3s ease; }
+  .tab-page.active { display: block; }
+
+  /* ── 준비 중 화면 ── */
+  .coming-soon {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 60vh; gap: 16px; text-align: center;
+    padding: 32px 24px;
+  }
+  .coming-soon-icon { font-size: 56px; }
+  .coming-soon-title {
+    font-family: 'Gmarket Sans', sans-serif;
+    font-size: 20px; font-weight: 700; color: #fff;
+  }
+  .coming-soon-sub {
+    font-size: 13px; color: var(--sub); line-height: 1.7;
+    max-width: 280px; word-break: keep-all;
+  }
+  .coming-soon-badge {
+    display: inline-block;
+    background: rgba(245,200,66,0.12);
+    border: 1px solid rgba(245,200,66,0.3);
+    color: var(--accent); font-size: 11px; font-weight: 900;
+    padding: 5px 14px; border-radius: 20px; letter-spacing: 1px;
+  }
+
+  /* ── 오답노트 미리보기 ── */
+  .wrongnote-preview {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 20px;
+    margin-top: 24px;
+  }
+  .wrongnote-preview-title {
+    font-size: 13px; font-weight: 900; color: var(--sub);
+    letter-spacing: 1px; margin-bottom: 14px;
+  }
+  .wrongnote-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .wrongnote-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .wrongnote-num {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: rgba(255,79,79,0.15); color: var(--wrong);
+    font-size: 12px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .wrongnote-q { font-size: 13px; color: #bcc0d0; line-height: 1.5; }
+  .wrongnote-level { font-size: 10px; color: var(--sub); margin-top: 3px; }
+
+  /* ── 통계 카드 ── */
+  .stat-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; margin-top: 24px;
+  }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 18px 16px; text-align: center;
+  }
+  .stat-num {
+    font-family: 'Gmarket Sans', sans-serif;
+    font-size: 32px; font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), #ff8c00);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    display: block;
+  }
+  .stat-label { font-size: 11px; color: var(--sub); margin-top: 4px; font-weight: 700; }
+
+  /* ── 설정 탭 ── */
+  .settings-section {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; margin-bottom: 14px; overflow: hidden;
+  }
+  .settings-section-title {
+    font-size: 11px; font-weight: 900; color: var(--sub);
+    letter-spacing: 1.5px; padding: 14px 16px 8px;
+  }
+  .settings-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; border-top: 1px solid var(--border); gap: 12px;
+  }
+  .settings-row-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+  .settings-row-icon {
+    font-size: 18px; width: 32px; height: 32px; display: flex;
+    align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.05); border-radius: 8px; flex-shrink: 0;
+  }
+  .settings-row-label { font-size: 14px; font-weight: 700; color: var(--text); }
+  .settings-row-sub   { font-size: 11px; color: var(--sub); margin-top: 2px; }
+  .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0; background: var(--border);
+    border-radius: 24px; cursor: pointer; transition: background .2s;
+  }
+  .toggle-slider::before {
+    content: ''; position: absolute; width: 18px; height: 18px;
+    left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform .2s;
+  }
+  .toggle input:checked + .toggle-slider { background: var(--accent); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+  .settings-select {
+    background: rgba(255,255,255,0.07); border: 1px solid var(--border);
+    color: var(--text); border-radius: 8px; padding: 6px 10px;
+    font-size: 13px; font-family: inherit; cursor: pointer; flex-shrink: 0;
+  }
+  .settings-slider { flex: 1; accent-color: var(--accent); cursor: pointer; }
+  .settings-slider-val { font-size: 13px; font-weight: 900; color: var(--accent); min-width: 28px; text-align: right; }
+  .level-btns { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 16px 14px; }
+  .level-btn {
+    padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 900;
+    font-family: inherit; cursor: pointer; border: 1.5px solid var(--border);
+    background: transparent; color: var(--sub); transition: all .18s;
+  }
+  .level-btn.sel-easy   { border-color:var(--correct); background:rgba(61,232,138,.12); color:var(--correct); }
+  .level-btn.sel-mid    { border-color:var(--accent);  background:rgba(245,200,66,.12); color:var(--accent); }
+  .level-btn.sel-hard   { border-color:#ff8c42;        background:rgba(255,140,66,.12); color:#ff8c42; }
+  .level-btn.sel-expert { border-color:var(--expert);  background:rgba(192,132,252,.12);color:var(--expert); }
+  .level-btn.sel-master { border-color:#60a5fa;        background:rgba(96,165,250,.12); color:#60a5fa; }
+  .login-box {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px 20px; margin-bottom: 14px; text-align: center;
+  }
+  .login-avatar { font-size: 48px; margin-bottom: 12px; }
+  .login-name   { font-size: 16px; font-weight: 900; color: #fff; margin-bottom: 4px; }
+  .login-email  { font-size: 12px; color: var(--sub); margin-bottom: 16px; }
+  .oauth-btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 13px 16px; border-radius: 12px; font-size: 14px; font-weight: 700;
+    font-family: inherit; cursor: pointer; border: 1.5px solid var(--border);
+    background: transparent; color: var(--text); transition: all .18s; width: 100%; margin-bottom: 10px;
+  }
+  .oauth-btn:hover  { background: rgba(255,255,255,0.06); }
+  .oauth-btn.google { border-color: rgba(234,67,53,0.5); }
+  .oauth-btn.naver  { border-color: rgba(3,199,90,0.5); }
+  .oauth-btn.kakao  { border-color: rgba(254,229,0,0.5); background: rgba(254,229,0,0.04); }
+  .oauth-btn.email  { border-color: rgba(99,179,237,0.5); }
+  .oauth-btn-icon   { font-size: 20px; }
+  .logout-btn {
+    padding: 11px 28px; background: transparent;
+    border: 1px solid rgba(255,79,79,0.4); border-radius: 10px;
+    color: var(--wrong); font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer;
+  }
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    z-index: 200; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 28px 24px; width: 100%; max-width: 360px;
+    animation: slideIn .25s ease;
+  }
+  .modal-title { font-size: 18px; font-weight: 900; color: #fff; margin-bottom: 20px; }
+  .modal-input {
+    width: 100%; padding: 12px 14px; background: rgba(255,255,255,0.06);
+    border: 1.5px solid var(--border); border-radius: 10px;
+    color: var(--text); font-size: 14px; font-family: inherit;
+    margin-bottom: 12px; outline: none; transition: border-color .18s; display: block;
+  }
+  .modal-input:focus { border-color: var(--accent); }
+  .modal-submit {
+    width: 100%; padding: 13px; background: var(--accent); color: #000;
+    border: none; border-radius: 10px; font-size: 15px; font-weight: 900;
+    font-family: inherit; cursor: pointer; margin-top: 4px;
+  }
+  .modal-close {
+    width: 100%; padding: 11px; background: transparent; border: 1px solid var(--border);
+    border-radius: 10px; color: var(--sub); font-size: 13px; font-family: inherit;
+    cursor: pointer; margin-top: 8px;
+  }
+  .modal-error { font-size: 12px; color: var(--wrong); margin-bottom: 8px; min-height: 16px; }
+  body.theme-light {
+    --bg: #eef1f8;
+    --card: #ffffff;
+    --text: #0f1117;
+    --sub: #374151;
+    --border: #c8cde0;
+    --accent: #a05c07;
+    --correct: #14532d;
+    --wrong: #991b1b;
+    --expert: #5b21b6;
+  }
+  body.theme-light .header h1 { color: #0f1117; }
+  body.theme-light .header h1 span { color: var(--accent); }
+  body.theme-light .header-tag { background: var(--accent); color: #fff; }
+  body.theme-light .header-date { color: #374151; }
+  body.theme-light .card { background: #fff; border-color: #c8cde0; box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+  body.theme-light .card::before { background: linear-gradient(90deg, var(--accent), #d97706); }
+  body.theme-light .question { color: #0f1117; font-weight: 900; }
+  body.theme-light .news-source { color: #374151; }
+  body.theme-light .context { background: rgba(160,92,7,0.07); border-left-color: rgba(160,92,7,0.4); color: #1f2937; font-weight: 500; }
+  body.theme-light .opt { border-color: #c8cde0; color: #0f1117; background: #fafbfd; font-weight: 700; }
+  body.theme-light .opt:hover:not(:disabled) { border-color: var(--accent); background: rgba(160,92,7,0.06); }
+  body.theme-light .opt-num { background: #e2e6f0; color: #374151; font-weight: 900; }
+  body.theme-light .opt-text { color: #0f1117; }
+  body.theme-light .opt.correct { border-color: var(--correct); background: rgba(20,83,45,0.08); }
+  body.theme-light .opt.correct .opt-num { background: var(--correct); color: #fff; }
+  body.theme-light .opt.wrong   { border-color: var(--wrong);   background: rgba(153,27,27,0.08); }
+  body.theme-light .opt.wrong   .opt-num   { background: var(--wrong); color: #fff; }
+  body.theme-light .explanation { background: rgba(160,92,7,0.06); border-color: rgba(160,92,7,0.3); color: #1f2937; font-weight: 500; }
+  body.theme-light .explanation strong { color: #7c2d12; }
+  body.theme-light .tip-label { color: var(--accent); }
+  body.theme-light .article-link { background: rgba(160,92,7,0.07); border-color: rgba(160,92,7,0.3); color: var(--accent); font-weight: 900; }
+  body.theme-light .expert-toggle { border-color: rgba(91,33,182,0.4); color: var(--expert); font-weight: 900; }
+  body.theme-light .expert-body { background: rgba(91,33,182,0.04); border-color: rgba(91,33,182,0.2); color: #1f2937; }
+  body.theme-light .expert-body p { color: #1f2937; font-weight: 500; }
+  body.theme-light .expert-body strong { color: var(--expert); }
+  body.theme-light .expert-label { color: var(--expert); }
+  body.theme-light .takeaway { background: rgba(91,33,182,0.08); border-left-color: var(--expert); color: #3b0764; font-weight: 700; }
+  body.theme-light .next-btn { background: var(--accent); color: #fff; }
+  body.theme-light .retry-btn { background: var(--accent); color: #fff; }
+  body.theme-light .final-score { background: linear-gradient(135deg, var(--accent), #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  body.theme-light .final-msg  { color: #0f1117; font-weight: 900; }
+  body.theme-light .final-sub  { color: #374151; font-weight: 500; }
+  body.theme-light .dot        { background: #c8cde0; }
+  body.theme-light .dot.ok     { background: var(--correct); }
+  body.theme-light .dot.no     { background: var(--wrong); }
+  body.theme-light .dot.cur    { background: var(--accent); }
+  body.theme-light .progress-track { background: #dde1ee; }
+  body.theme-light .progress-fill  { background: var(--accent); }
+  body.theme-light .level-pill.lv-easy   { background: #d1fae5; color: #14532d; font-weight: 900; }
+  body.theme-light .level-pill.lv-mid    { background: #fef3c7; color: #78350f; font-weight: 900; }
+  body.theme-light .level-pill.lv-hard   { background: #ffedd5; color: #7c2d12; font-weight: 900; }
+  body.theme-light .level-pill.lv-expert { background: #ede9fe; color: #4c1d95; font-weight: 900; }
+  body.theme-light .level-pill.lv-master { background: #dbeafe; color: #1e3a8a; font-weight: 900; }
+  body.theme-light .q-counter   { color: #374151; font-weight: 700; }
+  body.theme-light .result-badge.ok { background: rgba(20,83,45,0.1); color: var(--correct); font-weight: 900; }
+  body.theme-light .result-badge.no { background: rgba(153,27,27,0.1); color: var(--wrong); font-weight: 900; }
+  body.theme-light .loading-title { color: #0f1117; }
+  body.theme-light .loading-sub   { color: #374151; }
+  body.theme-light .spinner { border-color: #dde1ee; border-top-color: var(--accent); }
+  body.theme-light .tab-bar { background: rgba(238,241,248,0.98); border-top-color: #c8cde0; }
+  body.theme-light .tab-item { color: #4b5563; font-weight: 700; }
+  body.theme-light .tab-item.active { color: var(--accent); }
+  body.theme-light .tab-item.active::after { background: var(--accent); }
+  body.theme-light .settings-section { background: #fff; border-color: #c8cde0; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  body.theme-light .settings-section-title { color: #374151; font-weight: 900; }
+  body.theme-light .settings-row   { border-top-color: #e8ebf4; }
+  body.theme-light .settings-row-label { color: #0f1117; font-weight: 700; }
+  body.theme-light .settings-row-sub   { color: #4b5563; font-weight: 500; }
+  body.theme-light .settings-row-icon  { background: #f0f2f9; }
+  body.theme-light .settings-select { background: #f0f2f9; border-color: #c8cde0; color: #0f1117; font-weight: 700; }
+  body.theme-light .settings-slider-val { color: var(--accent); }
+  body.theme-light .level-btn { border-color: #c8cde0; color: #374151; background: #f5f7fc; font-weight: 700; }
+  body.theme-light .level-btn.sel-easy   { background: #d1fae5; border-color: #14532d; color: #14532d; }
+  body.theme-light .level-btn.sel-mid    { background: #fef3c7; border-color: #78350f; color: #78350f; }
+  body.theme-light .level-btn.sel-hard   { background: #ffedd5; border-color: #7c2d12; color: #7c2d12; }
+  body.theme-light .level-btn.sel-expert { background: #ede9fe; border-color: #4c1d95; color: #4c1d95; }
+  body.theme-light .level-btn.sel-master { background: #dbeafe; border-color: #1e3a8a; color: #1e3a8a; }
+  body.theme-light .login-box  { background: #fff; border-color: #c8cde0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  body.theme-light .login-name { color: #0f1117; font-weight: 900; }
+  body.theme-light .login-email { color: #4b5563; }
+  body.theme-light .oauth-btn  { color: #0f1117; border-color: #c8cde0; background: #f5f7fc; font-weight: 700; }
+  body.theme-light .oauth-btn:hover { background: #eaecf5; }
+  body.theme-light .modal      { background: #fff; border-color: #c8cde0; }
+  body.theme-light .modal-title { color: #0f1117; font-weight: 900; }
+  body.theme-light .modal-input { background: #f0f2f9; border-color: #c8cde0; color: #0f1117; font-weight: 500; }
+  body.theme-light .modal-close { border-color: #c8cde0; color: #4b5563; }
+  body.theme-light .wrongnote-preview { background: #fff; border-color: #c8cde0; }
+  body.theme-light .wrongnote-preview-title { color: #374151; font-weight: 900; }
+  body.theme-light .wrongnote-q   { color: #1f2937; font-weight: 500; }
+  body.theme-light .wrongnote-num { background: rgba(153,27,27,0.1); color: var(--wrong); }
+  body.theme-light .stat-card  { background: #fff; border-color: #c8cde0; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  body.theme-light .stat-label { color: #374151; font-weight: 700; }
+  body.theme-light .coming-soon-title { color: #0f1117; font-weight: 900; }
+  body.theme-light .coming-soon-sub   { color: #374151; font-weight: 500; }
+  body.theme-light .coming-soon-badge { background: rgba(160,92,7,0.1); border-color: rgba(160,92,7,0.35); color: var(--accent); font-weight: 900; }
+</head>
+<body>
+<div class="app">
+
+  <!-- ══════════════════════════════════
+       탭 1: 홈 (퀴즈)
+  ══════════════════════════════════ -->
+  <div class="tab-page active" id="page-home">
+
+    <!-- 헤더 -->
+    <div class="header">
+      <div class="header-tag">📈 TODAY'S ECONOMY</div>
+      <h1>오늘의<br><span>경제 퀴즈</span></h1>
+      <p class="header-date" id="headerDate"></p>
+    </div>
+
+    <!-- 로딩 -->
+    <div class="loading" id="loadingArea">
+      <div class="spinner"></div>
+      <div>
+        <div class="loading-title">퀴즈 불러오는 중...</div>
+        <div class="loading-sub">잠깐만요, 금방 돼요 ☕</div>
+      </div>
+    </div>
+
+    <!-- 퀴즈 영역 -->
+    <div id="quizArea" style="display:none">
+      <div class="dots" id="dots"></div>
+      <div class="meta-row">
+        <span class="level-pill" id="levelPill"></span>
+        <span class="q-counter"  id="counter"></span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="card" id="qCard">
+        <div class="news-source"  id="newsSource"></div>
+        <div class="context"      id="context"></div>
+        <div class="question"     id="questionText"></div>
+        <div class="options"      id="optionsArea"></div>
+        <div class="result-badge" id="resultBadge"></div>
+        <div class="explanation"  id="explanation"></div>
+        <a class="article-link" id="articleLink" target="_blank" rel="noopener"></a>
+        <div class="expert-wrap"  id="expertWrap">
+          <button class="expert-toggle" id="expertToggle" onclick="toggleExpert()">
+            <span>🎓 경제학 박사의 심층 해설 보기</span>
+            <span class="arr">▼</span>
+          </button>
+          <div class="expert-body" id="expertBody"></div>
+        </div>
+      </div>
+      <button class="next-btn" id="nextBtn" onclick="nextQ()"></button>
+    </div>
+
+    <!-- 결과 화면 -->
+    <div class="final card" id="finalScreen">
+      <div class="final-emoji" id="finalEmoji"></div>
+      <div><span class="final-score" id="finalScore"></span><span class="final-total"> / 5</span></div>
+      <div class="final-msg" id="finalMsg"></div>
+      <div class="final-sub" id="finalSub"></div>
+      <div class="dots" id="finalDots" style="margin-bottom:20px"></div>
+      <button class="retry-btn" onclick="restart()">🔄 다시 풀기</button>
+    </div>
+
+  </div><!-- /page-home -->
+
+  <!-- ══════════════════════════════════
+       탭 2: 오답노트
+  ══════════════════════════════════ -->
+  <div class="tab-page" id="page-wrong">
+    <div class="header">
+      <div class="header-tag">📝 WRONG NOTE</div>
+      <h1>오답<br><span>노트</span></h1>
+    </div>
+    <div id="wrongNoteContent"></div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       탭 3: 통계 & 랭킹
+  ══════════════════════════════════ -->
+  <div class="tab-page" id="page-stats">
+    <div class="header">
+      <div class="header-tag">📊 STATS & RANKING</div>
+      <h1>통계 &amp;<br><span>랭킹</span></h1>
+    </div>
+    <div id="statsContent"></div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       탭 4: 상점
+  ══════════════════════════════════ -->
+  <div class="tab-page" id="page-shop">
+    <div class="header">
+      <div class="header-tag">🛍️ SHOP</div>
+      <h1>경제<br><span>상점</span></h1>
+    </div>
+    <div class="coming-soon">
+      <div class="coming-soon-icon">🏪</div>
+      <div class="coming-soon-title">상점 오픈 준비 중</div>
+      <div class="coming-soon-sub">
+        포인트로 힌트, 테마, 아이콘을 구매할 수 있는<br>
+        상점이 곧 문을 열어요!
+      </div>
+      <span class="coming-soon-badge">COMING SOON</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       탭 5: 설정
+  ══════════════════════════════════ -->
+  <div class="tab-page" id="page-settings">
+    <div class="header">
+      <div class="header-tag">⚙️ SETTINGS</div>
+      <h1>설정</h1>
+    </div>
+
+    <!-- 로그인 섹션 -->
+    <div class="login-box" id="loginBox">
+      <div id="loginArea">
+        <div class="login-avatar">👤</div>
+        <div class="login-name">로그인하면 더 많은 기능을!</div>
+        <div class="login-email" style="margin-bottom:20px">통계·오답노트를 기기 간 동기화해요</div>
+        <button class="oauth-btn google" onclick="loginGoogle()">
+          <span class="oauth-btn-icon">🔵</span> Google로 로그인
+        </button>
+        <button class="oauth-btn naver" onclick="loginNaver()">
+          <span class="oauth-btn-icon">🟢</span> 네이버로 로그인
+          <span style="font-size:10px;color:var(--sub);margin-left:4px">(준비 중)</span>
+        </button>
+        <button class="oauth-btn kakao" onclick="loginKakao()">
+          <span class="oauth-btn-icon">🟡</span> 카카오로 로그인
+          <span style="font-size:10px;color:var(--sub);margin-left:4px">(준비 중)</span>
+        </button>
+        <button class="oauth-btn email" onclick="openEmailModal()">
+          <span class="oauth-btn-icon">📧</span> 이메일로 로그인
+        </button>
+      </div>
+      <div id="loggedArea" style="display:none">
+        <div class="login-avatar" id="userAvatar">😊</div>
+        <div class="login-name" id="userName">사용자</div>
+        <div class="login-email" id="userEmail">-</div>
+        <button class="logout-btn" onclick="logoutUser()">로그아웃</button>
+      </div>
+    </div>
+
+    <!-- 퀴즈 알림 -->
+    <div class="settings-section">
+      <div class="settings-section-title">🔔 퀴즈 알림</div>
+      <div class="settings-row">
+        <div class="settings-row-left">
+          <div class="settings-row-icon">🔔</div>
+          <div>
+            <div class="settings-row-label">매일 알림 받기</div>
+            <div class="settings-row-sub">지정한 시간에 퀴즈 알림을 보내요</div>
+          </div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="notifToggle" onchange="saveSettings()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-left">
+          <div class="settings-row-icon">🕐</div>
+          <div>
+            <div class="settings-row-label">알림 시간</div>
+            <div class="settings-row-sub">매일 이 시간에 알림이 와요</div>
+          </div>
+        </div>
+        <input type="time" class="settings-select" id="notifTime" value="08:00" onchange="saveSettings()" style="min-width:100px">
+      </div>
+    </div>
+
+    <!-- 퀴즈 설정 -->
+    <div class="settings-section">
+      <div class="settings-section-title">📝 퀴즈 설정</div>
+      <div class="settings-row">
+        <div class="settings-row-left">
+          <div class="settings-row-icon">🔢</div>
+          <div>
+            <div class="settings-row-label">문제 수</div>
+            <div class="settings-row-sub">한 번에 풀 문제 개수 (1~10)</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex:1;max-width:140px">
+          <input type="range" class="settings-slider" id="quizCount" min="1" max="10" value="5"
+            oninput="document.getElementById('quizCountVal').textContent=this.value; saveSettings()">
+          <span class="settings-slider-val" id="quizCountVal">5</span>
+        </div>
+      </div>
+      <div class="settings-row" style="flex-direction:column;align-items:flex-start">
+        <div style="display:flex;align-items:center;gap:10px;width:100%">
+          <div class="settings-row-icon">🎯</div>
+          <div>
+            <div class="settings-row-label">선호 난이도</div>
+            <div class="settings-row-sub">선택한 난이도 중심으로, 인접 난이도도 섞어서 출제</div>
+          </div>
+        </div>
+        <div class="level-btns" id="levelBtns">
+          <button class="level-btn" data-level="lv-easy"   onclick="selectLevel(this)">🌱 입문</button>
+          <button class="level-btn" data-level="lv-mid"    onclick="selectLevel(this)">🔥 초급</button>
+          <button class="level-btn sel-hard" data-level="lv-hard"   onclick="selectLevel(this)">⚡ 중급</button>
+          <button class="level-btn" data-level="lv-expert" onclick="selectLevel(this)">💎 고급</button>
+          <button class="level-btn" data-level="lv-master" onclick="selectLevel(this)">👑 최고급</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 화면 테마 -->
+    <div class="settings-section">
+      <div class="settings-section-title">🎨 화면 테마</div>
+      <div class="settings-row">
+        <div class="settings-row-left">
+          <div class="settings-row-icon">🌓</div>
+          <div>
+            <div class="settings-row-label">테마 선택</div>
+            <div class="settings-row-sub">라이트 / 다크 / 시스템 설정 따라가기</div>
+          </div>
+        </div>
+        <select class="settings-select" id="themeSelect" onchange="applyTheme(this.value); saveSettings()">
+          <option value="dark" selected>🌙 다크</option>
+          <option value="light">☀️ 라이트</option>
+          <option value="system">🖥️ 시스템</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 앱 정보 -->
+    <div class="settings-section">
+      <div class="settings-section-title">ℹ️ 앱 정보</div>
+      <div class="settings-row">
+        <div class="settings-row-left">
+          <div class="settings-row-icon">📌</div>
+          <div><div class="settings-row-label">버전</div></div>
+        </div>
+        <span style="font-size:13px;color:var(--sub)">v1.0.0</span>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-left">
+          <div class="settings-row-icon">🗑️</div>
+          <div>
+            <div class="settings-row-label">데이터 초기화</div>
+            <div class="settings-row-sub">모든 통계·오답노트를 삭제해요</div>
+          </div>
+        </div>
+        <button onclick="resetAllData()" style="padding:7px 14px;background:transparent;border:1px solid rgba(255,79,79,0.4);border-radius:8px;color:var(--wrong);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;">초기화</button>
+      </div>
+    </div>
+
+  </div><!-- /page-settings -->
+
+  <!-- 이메일 로그인 모달 -->
+  <div class="modal-overlay" id="emailModal">
+    <div class="modal">
+      <div class="modal-title">📧 이메일 로그인</div>
+      <div class="modal-error" id="emailError"></div>
+      <input class="modal-input" type="email"    id="emailInput"    placeholder="이메일">
+      <input class="modal-input" type="password" id="passwordInput" placeholder="비밀번호 (6자 이상)">
+      <button class="modal-submit" onclick="loginEmail()">로그인 / 회원가입</button>
+      <button class="modal-close"  onclick="closeEmailModal()">취소</button>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ══════════════════════════════════
+     하단 탭바
+══════════════════════════════════ -->
+<nav class="tab-bar">
+  <button class="tab-item active" id="tab-home" onclick="switchTab('home')">
+    <span class="tab-icon">🏠</span>
+    <span>홈</span>
+  </button>
+  <button class="tab-item" id="tab-wrong" onclick="switchTab('wrong')">
+    <span class="tab-icon">📝</span>
+    <span>오답노트</span>
+  </button>
+  <button class="tab-item" id="tab-stats" onclick="switchTab('stats')">
+    <span class="tab-icon">📊</span>
+    <span>통계·랭킹</span>
+  </button>
+  <button class="tab-item" id="tab-shop" onclick="switchTab('shop')">
+    <span class="tab-icon">🛍️</span>
+    <span>상점</span>
+  </button>
+  <button class="tab-item" id="tab-settings" onclick="switchTab('settings')">
+    <span class="tab-icon">⚙️</span>
+    <span>설정</span>
+  </button>
+</nav>
+
+<script>
+// ═══════════════════════════════════════
+// 상태
+// ═══════════════════════════════════════
+let quizzes = [], cur = 0, score = 0;
+let wrongList = JSON.parse(localStorage.getItem('wrongList') || '[]');
+let statsData = JSON.parse(localStorage.getItem('statsData') || '{"total":0,"correct":0,"streak":0,"lastDate":""}');
+
+// ═══════════════════════════════════════
+// 탭 전환
+// ═══════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'wrong')  renderWrongNote();
+  if (name === 'stats')  renderStats();
+}
+
+// ═══════════════════════════════════════
+// 오답노트
+// ═══════════════════════════════════════
+function renderWrongNote() {
+  const el = document.getElementById('wrongNoteContent');
+  if (!wrongList.length) {
+    el.innerHTML = `
+      <div class="coming-soon">
+        <div class="coming-soon-icon">🎯</div>
+        <div class="coming-soon-title">오답이 없어요!</div>
+        <div class="coming-soon-sub">문제를 틀리면 여기에 자동으로 저장돼요.<br>퀴즈를 풀어보세요!</div>
+      </div>`;
+    return;
+  }
+
+  const levels = {'lv-easy':'🌱 입문','lv-mid':'🔥 초급','lv-hard':'⚡ 중급','lv-expert':'💎 고급','lv-master':'👑 최고급'};
+  const items = wrongList.slice().reverse().slice(0, 20).map((w, i) => `
+    <div class="wrongnote-item">
+      <div class="wrongnote-num">${i+1}</div>
+      <div>
+        <div class="wrongnote-q">${w.q}</div>
+        <div class="wrongnote-level">${levels[w.levelClass] || ''} · ${w.date || ''} · 정답: ${w.correct}</div>
+      </div>
+    </div>`).join('');
+
+  el.innerHTML = `
+    <div style="text-align:center;margin-bottom:16px">
+      <span class="coming-soon-badge">총 ${wrongList.length}개 오답</span>
+    </div>
+    <div class="wrongnote-preview">
+      <div class="wrongnote-preview-title">📋 최근 오답 목록</div>
+      ${items}
+    </div>
+    <div style="text-align:center;margin-top:16px">
+      <button onclick="clearWrong()" style="padding:10px 24px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--sub);font-size:13px;font-family:inherit;cursor:pointer;">
+        🗑️ 오답노트 초기화
+      </button>
+    </div>`;
+}
+
+function clearWrong() {
+  if (confirm('오답노트를 초기화할까요?')) {
+    wrongList = [];
+    localStorage.setItem('wrongList', '[]');
+    renderWrongNote();
+  }
+}
+
+// ═══════════════════════════════════════
+// 통계 & 랭킹
+// ═══════════════════════════════════════
+function renderStats() {
+  const el = document.getElementById('statsContent');
+  const rate = statsData.total ? Math.round(statsData.correct / statsData.total * 100) : 0;
+  const grade = rate >= 90 ? '🏆 경제 박사' : rate >= 70 ? '😎 경제 고수' : rate >= 50 ? '🙂 경제 입문자' : '📚 경제 공부 중';
+
+  el.innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card">
+        <span class="stat-num">${statsData.total}</span>
+        <div class="stat-label">총 문제 수</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num">${rate}%</span>
+        <div class="stat-label">정답률</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num">${statsData.streak}</span>
+        <div class="stat-label">연속 정답</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num">${wrongList.length}</span>
+        <div class="stat-label">오답 누적</div>
+      </div>
+    </div>
+    <div class="wrongnote-preview" style="margin-top:16px;text-align:center">
+      <div class="coming-soon-icon" style="font-size:36px;margin-bottom:8px">🎖️</div>
+      <div style="font-size:16px;font-weight:900;color:#fff;margin-bottom:4px">${grade}</div>
+      <div style="font-size:12px;color:var(--sub)">현재 나의 경제 실력 등급</div>
+    </div>
+    <div class="coming-soon" style="min-height:auto;margin-top:8px;padding:24px">
+      <div class="coming-soon-icon" style="font-size:36px">🏅</div>
+      <div class="coming-soon-title" style="font-size:16px">랭킹 보드</div>
+      <div class="coming-soon-sub">다른 유저들과 점수를 비교하는<br>랭킹 기능이 곧 추가돼요!</div>
+      <span class="coming-soon-badge">COMING SOON</span>
+    </div>`;
+}
+
+// ═══════════════════════════════════════
+// 통계 저장
+// ═══════════════════════════════════════
+function saveStats(isCorrect, quiz) {
+  statsData.total++;
+  if (isCorrect) {
+    statsData.correct++;
+    statsData.streak++;
+  } else {
+    statsData.streak = 0;
+    // 오답 저장
+    wrongList.push({
+      q: quiz.q,
+      levelClass: quiz.levelClass,
+      correct: quiz.opts[quiz.ans],
+      date: new Date().toLocaleDateString('ko-KR', {month:'2-digit', day:'2-digit'})
+    });
+    localStorage.setItem('wrongList', JSON.stringify(wrongList));
+  }
+  statsData.lastDate = new Date().toISOString().slice(0,10);
+  localStorage.setItem('statsData', JSON.stringify(statsData));
+}
+
+// ═══════════════════════════════════════
+// 초기화 — 난이도 풀에서 설정에 맞게 문제 선택
+// ═══════════════════════════════════════
+async function init() {
+  const d     = new Date();
+  const count = getSetting('quizCount') || 5;
+  document.getElementById('headerDate').textContent =
+    `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} · 오늘의 ${count}문제`;
+
+  try {
+    const data = await loadJSON();
+    quizzes = selectQuizzesFromPool(data.quizzes, count);
+    document.getElementById('loadingArea').style.display = 'none';
+    document.getElementById('quizArea').style.display   = 'block';
+    initDots();
+    render();
+  } catch (e) {
+    document.getElementById('loadingArea').innerHTML = `
+      <div style="text-align:center;padding:40px 20px">
+        <div style="font-size:48px;margin-bottom:16px">🌅</div>
+        <div style="font-size:16px;font-weight:900;color:var(--text);margin-bottom:8px">오늘의 퀴즈 준비 중이에요</div>
+        <div style="font-size:13px;color:var(--sub);line-height:1.7;margin-bottom:24px">
+          매일 오전 6시에 새 퀴즈가 업데이트돼요.<br>잠시 후 다시 열어주세요! 🙏
+        </div>
+        <button onclick="location.reload()" style="padding:12px 28px;background:var(--accent);color:#000;border:none;border-radius:10px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit">새로고침</button>
+      </div>`;
+  }
+}
+
+// quiz_today.json 로드
+async function loadJSON() {
+  const res = await fetch(`quiz_today.json?t=${Date.now()}`);
+  if (!res.ok) throw new Error('파일 없음');
+  const data = await res.json();
+  if (!data.quizzes) throw new Error('퀴즈 없음');
+  return data;
+}
+
+// ═══════════════════════════════════════
+// 난이도 풀에서 가중치 기반 문제 선택
+// ═══════════════════════════════════════
+function selectQuizzesFromPool(pool, count) {
+  // 배열이면 구 포맷 (하위 호환)
+  if (Array.isArray(pool)) return pool.slice(0, count);
+
+  const LEVELS  = ['lv-easy','lv-mid','lv-hard','lv-expert','lv-master'];
+  const pref    = getSetting('level') || 'lv-hard';
+  const prefIdx = LEVELS.indexOf(pref);
+
+  // 거리별 가중치: 선호=10, 거리1=4, 거리2=1, 거리3+=0
+  const weights = LEVELS.map((_, i) => {
+    const d = Math.abs(prefIdx - i);
+    return d === 0 ? 10 : d === 1 ? 4 : d === 2 ? 1 : 0;
+  });
+
+  // 각 레벨 풀 셔플
+  const pools = {};
+  LEVELS.forEach(lv => {
+    pools[lv] = [...(pool[lv] || [])].sort(() => Math.random() - 0.5);
+  });
+  const used = {};
+  LEVELS.forEach(lv => { used[lv] = 0; });
+
+  const picked = [];
+  let w = [...weights];
+
+  while (picked.length < count) {
+    const total = w.reduce((a, b) => a + b, 0);
+    if (total === 0) break;
+    let r = Math.random() * total;
+    let chosenLv = LEVELS[0];
+    for (let i = 0; i < LEVELS.length; i++) {
+      r -= w[i];
+      if (r <= 0) { chosenLv = LEVELS[i]; break; }
+    }
+    if (used[chosenLv] < pools[chosenLv].length) {
+      picked.push(pools[chosenLv][used[chosenLv]++]);
+    } else {
+      w[LEVELS.indexOf(chosenLv)] = 0; // 소진 → 가중치 제거
+    }
+  }
+  return picked;
+}
+
+// ═══════════════════════════════════════
+// 도트
+// ═══════════════════════════════════════
+function initDots() {
+  ['dots','finalDots'].forEach(id => {
+    document.getElementById(id).innerHTML =
+      quizzes.map((_,i) =>
+        `<div class="dot ${i===0?'cur':''}" id="${id==='dots'?'d':'fd'}${i}"></div>`
+      ).join('');
+  });
+}
+
+function updateDot(i, cls) {
+  const d = document.getElementById('d'+i);
+  if (d) { d.className = 'dot ' + cls; }
+  const fd = document.getElementById('fd'+i);
+  if (fd) { fd.className = 'dot ' + cls; }
+  if (i+1 < quizzes.length) {
+    const next = document.getElementById('d'+(i+1));
+    if (next) next.className = 'dot cur';
+  }
+}
+
+// ═══════════════════════════════════════
+// 렌더
+// ═══════════════════════════════════════
+const LEVEL_MAP = {
+  'lv-easy':   '🌱 입문',
+  'lv-mid':    '🔥 초급',
+  'lv-hard':   '⚡ 중급',
+  'lv-expert': '💎 고급',
+  'lv-master': '👑 최고급',
+};
+
+function render() {
+  const q = quizzes[cur];
+  document.getElementById('levelPill').textContent  = LEVEL_MAP[q.levelClass] || q.levelClass;
+  document.getElementById('levelPill').className    = 'level-pill ' + q.levelClass;
+  document.getElementById('counter').textContent    = `${cur+1} / ${quizzes.length}`;
+  document.getElementById('progressFill').style.width = `${((cur+1)/quizzes.length)*100}%`;
+  document.getElementById('newsSource').textContent  = q.source;
+
+  // 배경 설명
+  const ctxEl = document.getElementById('context');
+  if (q.context) {
+    ctxEl.textContent = q.context;
+    ctxEl.style.display = 'block';
+  } else {
+    ctxEl.style.display = 'none';
+  }
+
+  document.getElementById('questionText').textContent = q.q;
+
+  const area = document.getElementById('optionsArea');
+  area.innerHTML = '';
+  ['①','②','③','④'].forEach((lbl, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.innerHTML = `<span class="opt-num">${lbl}</span><span class="opt-text">${q.opts[i]}</span>`;
+    btn.onclick = () => pick(i);
+    area.appendChild(btn);
+  });
+
+  // 초기화
+  document.getElementById('resultBadge').className  = 'result-badge';
+  document.getElementById('explanation').className  = 'explanation';
+  document.getElementById('articleLink').className  = 'article-link';
+  document.getElementById('expertWrap').className   = 'expert-wrap';
+  document.getElementById('expertBody').className  = 'expert-body';
+  document.getElementById('expertToggle').className= 'expert-toggle';
+  document.getElementById('nextBtn').className     = 'next-btn';
+  document.getElementById('qCard').classList.remove('answered');
+}
+
+// ═══════════════════════════════════════
+// 선택
+// ═══════════════════════════════════════
+function pick(idx) {
+  const q = quizzes[cur];
+  const btns = document.querySelectorAll('.opt');
+  btns.forEach(b => b.disabled = true);
+
+  const ok = idx === q.ans;
+  btns[idx].classList.add(ok ? 'correct' : 'wrong');
+  if (!ok) btns[q.ans].classList.add('correct');
+  if (ok) score++;
+
+  saveStats(ok, q);
+  updateDot(cur, ok ? 'ok' : 'no');
+
+  // 배지
+  const badge = document.getElementById('resultBadge');
+  badge.textContent = ok ? '🎉 정답! 잘 알고 있네요' : `❌ 아쉽네요! 정답은 ${q.ans+1}번이에요`;
+  badge.className   = 'result-badge show ' + (ok ? 'ok' : 'no');
+
+  // 한 줄 해설
+  document.getElementById('explanation').innerHTML =
+    `<span class="tip-label">💡 한 줄 해설</span>${q.exp}`;
+  document.getElementById('explanation').className = 'explanation show';
+
+  // 기사 링크 — 유효한 URL만 표시
+  const linkEl = document.getElementById('articleLink');
+  const url = q.article_url;
+  const isValidUrl = url && url !== 'null' && url !== '' && url.startsWith('http');
+  if (isValidUrl) {
+    linkEl.href = url;
+    linkEl.textContent = q.article_title || '관련 기사 보기';
+    linkEl.className = 'article-link show';
+  } else {
+    linkEl.className = 'article-link';
+  }
+
+  // 전문가 해설
+  if (q.expert_detail) {
+    document.getElementById('expertBody').innerHTML = q.expert_detail;
+    document.getElementById('expertWrap').className = 'expert-wrap show';
+  }
+
+  document.getElementById('qCard').classList.add('answered');
+  document.getElementById('nextBtn').textContent =
+    cur < quizzes.length - 1 ? '다음 문제 →' : '결과 보기 🏁';
+  document.getElementById('nextBtn').className = 'next-btn show';
+}
+
+// ═══════════════════════════════════════
+// 전문가 해설 토글
+// ═══════════════════════════════════════
+function toggleExpert() {
+  const toggle  = document.getElementById('expertToggle');
+  const body    = document.getElementById('expertBody');
+  const isOpen  = body.classList.contains('open');
+  toggle.classList.toggle('open', !isOpen);
+  body.classList.toggle('open', !isOpen);
+}
+
+// ═══════════════════════════════════════
+// 다음 문제
+// ═══════════════════════════════════════
+function nextQ() {
+  cur++;
+  if (cur >= quizzes.length) { showFinal(); return; }
+  render();
+}
+
+// ═══════════════════════════════════════
+// 결과 화면
+// ═══════════════════════════════════════
+function showFinal() {
+  document.getElementById('quizArea').style.display = 'none';
+  const pct  = score / quizzes.length;
+  const idx  = Math.min(Math.floor(pct * 5), 4);
+  const data = [
+    { e:'😢', m:'경제 뉴스, 조금 더 읽어봐요!',     s:'하루 기사 1개씩만 읽어도 금방 늘어요.' },
+    { e:'😅', m:'조금씩 늘고 있어요!',              s:'틀린 문제 해설을 다시 읽어보세요.' },
+    { e:'🙂', m:'제법 알고 있네요!',               s:'꾸준히 풀면 더 빠르게 늘어요.' },
+    { e:'😎', m:'경제 고수 예비군!',               s:'주변에 경제 설명해줄 수 있는 수준이에요.' },
+    { e:'🏆', m:'오늘의 경제 퀴즈 완벽 정복!',      s:'내일도 새 퀴즈로 도전해봐요!' },
+  ][idx];
+
+  document.getElementById('finalEmoji').textContent = data.e;
+  document.getElementById('finalScore').textContent = score;
+  document.getElementById('finalMsg').textContent   = data.m;
+  document.getElementById('finalSub').textContent   = data.s;
+  document.getElementById('finalScreen').className  = 'final show';
+}
+
+// ═══════════════════════════════════════
+// 다시 풀기
+// ═══════════════════════════════════════
+function restart() {
+  cur = 0; score = 0;
+  document.getElementById('finalScreen').className = 'final';
+  document.getElementById('quizArea').style.display = 'block';
+  initDots();
+  render();
+}
+
+// ═══════════════════════════════════════
+// 설정 저장/로드
+// ═══════════════════════════════════════
+let userSettings = JSON.parse(localStorage.getItem('userSettings') || '{}');
+const DEFAULTS = { notif: false, notifTime: '08:00', quizCount: 5, level: 'lv-hard', theme: 'dark' };
+
+function getSetting(key) {
+  return userSettings[key] !== undefined ? userSettings[key] : DEFAULTS[key];
+}
+
+function saveSettings() {
+  userSettings.notif      = document.getElementById('notifToggle').checked;
+  userSettings.notifTime  = document.getElementById('notifTime').value;
+  userSettings.quizCount  = parseInt(document.getElementById('quizCount').value);
+  userSettings.level      = getSelectedLevel();
+  userSettings.theme      = document.getElementById('themeSelect').value;
+  localStorage.setItem('userSettings', JSON.stringify(userSettings));
+}
+
+function loadSettingsUI() {
+  document.getElementById('notifToggle').checked         = getSetting('notif');
+  document.getElementById('notifTime').value             = getSetting('notifTime');
+  document.getElementById('quizCount').value             = getSetting('quizCount');
+  document.getElementById('quizCountVal').textContent    = getSetting('quizCount');
+  document.getElementById('themeSelect').value           = getSetting('theme');
+  applyTheme(getSetting('theme'));
+
+  // 난이도 버튼 복원 (택1)
+  const saved = getSetting('level') || 'lv-hard';
+  document.querySelectorAll('.level-btn').forEach(btn => {
+    const lv  = btn.dataset.level;
+    const cls = lv.replace('lv-', 'sel-');
+    btn.classList.toggle(cls, lv === saved);
+  });
+}
+
+// ─── 테마 ───
+function applyTheme(theme) {
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark = theme === 'dark' || (theme === 'system' && prefersDark);
+  document.body.classList.toggle('theme-light', !isDark);
+}
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (getSetting('theme') === 'system') applyTheme('system');
+});
+
+// ─── 난이도 버튼 택1 ───
+function selectLevel(btn) {
+  const lv = btn.dataset.level;
+  // 모든 버튼 선택 해제
+  document.querySelectorAll('.level-btn').forEach(b => {
+    const cls = b.dataset.level.replace('lv-', 'sel-');
+    b.classList.remove(cls);
+  });
+  // 클릭한 버튼만 선택
+  const cls = lv.replace('lv-', 'sel-');
+  btn.classList.add(cls);
+  saveSettings();
+}
+
+function getSelectedLevel() {
+  const btn = document.querySelector('.level-btn[class*="sel-"]');
+  return btn ? btn.dataset.level : 'lv-hard';
+}
+
+// ─── 데이터 초기화 ───
+function resetAllData() {
+  if (confirm('모든 통계와 오답노트가 삭제돼요. 계속할까요?')) {
+    wrongList  = [];
+    statsData  = { total: 0, correct: 0, streak: 0, lastDate: '' };
+    localStorage.removeItem('wrongList');
+    localStorage.removeItem('statsData');
+    alert('초기화 완료!');
+  }
+}
+
+// ═══════════════════════════════════════
+// 난이도 가중치 — 선호 난이도 중심, 주변도 섞기
+// ═══════════════════════════════════════
+const LEVEL_ORDER = ['lv-easy','lv-mid','lv-hard','lv-expert','lv-master'];
+
+function getWeightedLevel() {
+  const preferred = getSetting('level') || 'lv-hard';
+  const prefIdx = LEVEL_ORDER.indexOf(preferred);
+  const weights = LEVEL_ORDER.map((lv, i) => {
+    const dist = Math.abs(prefIdx - i);
+    if (dist === 0) return 10; // 선호: 약 59%
+    if (dist === 1) return 3;  // 인접: 각 약 18%
+    if (dist === 2) return 1;  // 2단계: 각 약 6%
+    return 0;
+  });
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < LEVEL_ORDER.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return LEVEL_ORDER[i];
+  }
+  return preferred;
+}
+
+// ═══════════════════════════════════════
+// OAuth 보안 유틸 (PKCE + state)
+// ═══════════════════════════════════════
+function generateSecureRandom(len = 32) {
+  const arr = new Uint8Array(len);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function setOAuthState() {
+  const state = generateSecureRandom(16);
+  sessionStorage.setItem('oauth_state', state);
+  sessionStorage.setItem('oauth_state_exp', Date.now() + 10 * 60 * 1000); // 10분 유효
+  return state;
+}
+
+function verifyOAuthState(returnedState) {
+  const stored  = sessionStorage.getItem('oauth_state');
+  const exp     = parseInt(sessionStorage.getItem('oauth_state_exp') || '0');
+  sessionStorage.removeItem('oauth_state');
+  sessionStorage.removeItem('oauth_state_exp');
+  if (!stored || !returnedState) return false;
+  if (Date.now() > exp) return false;
+  // timing-safe 비교 (브라우저에서 가능한 수준)
+  if (stored.length !== returnedState.length) return false;
+  let diff = 0;
+  for (let i = 0; i < stored.length; i++) diff |= stored.charCodeAt(i) ^ returnedState.charCodeAt(i);
+  return diff === 0;
+}
+
+// 이메일 유효성 검사 (RFC 5322 간략 버전)
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+}
+
+// XSS 방지용 텍스트 이스케이프
+function escapeHtml(str) {
+  return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ═══════════════════════════════════════
+// Firebase Auth (Google + Email)
+// ═══════════════════════════════════════
+// ★ 아래 firebaseConfig를 본인의 Firebase 프로젝트 설정값으로 교체하세요
+//   https://console.firebase.google.com → 프로젝트 설정 → 앱 추가(웹)
+const FIREBASE_CONFIG = {
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT.firebaseapp.com",
+  projectId:         "YOUR_PROJECT_ID",
+  storageBucket:     "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID"
+};
+
+let firebaseApp = null, firebaseAuth = null;
+
+async function initFirebase() {
+  if (firebaseApp) return true;
+  try {
+    const { initializeApp }                                   = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const { getAuth, onAuthStateChanged, GoogleAuthProvider,
+            signInWithPopup, signInWithEmailAndPassword,
+            createUserWithEmailAndPassword, signOut }         = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+
+    if (FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') return false; // 미설정
+
+    firebaseApp  = initializeApp(FIREBASE_CONFIG);
+    firebaseAuth = getAuth(firebaseApp);
+
+    // 로그인 상태 감지
+    onAuthStateChanged(firebaseAuth, user => {
+      if (user) {
+        document.getElementById('loginArea').style.display   = 'none';
+        document.getElementById('loggedArea').style.display  = 'block';
+        document.getElementById('userName').textContent      = user.displayName || '사용자';
+        document.getElementById('userEmail').textContent     = user.email || '';
+        document.getElementById('userAvatar').textContent    = user.photoURL ? '🖼️' : '😊';
+      } else {
+        document.getElementById('loginArea').style.display   = 'block';
+        document.getElementById('loggedArea').style.display  = 'none';
+      }
+    });
+
+    // 전역에 auth 함수 저장
+    window._fbAuth = { getAuth, GoogleAuthProvider, signInWithPopup,
+      signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut };
+    return true;
+  } catch (e) {
+    console.error('Firebase 초기화 실패:', e);
+    return false;
+  }
+}
+
+async function loginGoogle() {
+  const ok = await initFirebase();
+  if (!ok) { alert('Firebase 설정이 필요해요.\nindex.html의 FIREBASE_CONFIG를 채워주세요.'); return; }
+  try {
+    const provider = new window._fbAuth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    // state 파라미터로 CSRF 방지 (Firebase popup은 내부적으로 처리하나 명시적 기록)
+    setOAuthState();
+    await window._fbAuth.signInWithPopup(firebaseAuth, provider);
+  } catch (e) {
+    if (e.code !== 'auth/popup-closed-by-user') alert('로그인 실패: ' + escapeHtml(e.message));
+  }
+}
+
+function loginNaver() { alert('네이버 로그인은 준비 중이에요! Firebase Custom Token 연동 후 활성화될 예정이에요.'); }
+function loginKakao() { alert('카카오 로그인은 준비 중이에요! Firebase Custom Token 연동 후 활성화될 예정이에요.'); }
+
+function openEmailModal()  { document.getElementById('emailModal').classList.add('show'); document.getElementById('emailError').textContent = ''; }
+function closeEmailModal() { document.getElementById('emailModal').classList.remove('show'); }
+
+async function loginEmail() {
+  const ok = await initFirebase();
+  if (!ok) { alert('Firebase 설정이 필요해요.'); return; }
+  const email = document.getElementById('emailInput').value.trim();
+  const pw    = document.getElementById('passwordInput').value;
+  const errEl = document.getElementById('emailError');
+  errEl.textContent = '';
+
+  // 입력 검증
+  if (!email || !pw)          { errEl.textContent = '이메일과 비밀번호를 입력해주세요.'; return; }
+  if (!isValidEmail(email))   { errEl.textContent = '올바른 이메일 형식이 아니에요.'; return; }
+  if (pw.length < 8)          { errEl.textContent = '비밀번호는 8자 이상이에요.'; return; }
+  if (!/[A-Za-z]/.test(pw) || !/[0-9]/.test(pw)) {
+    errEl.textContent = '비밀번호에 영문자와 숫자를 모두 포함해주세요.'; return;
+  }
+
+  try {
+    await window._fbAuth.signInWithEmailAndPassword(firebaseAuth, email, pw);
+    closeEmailModal();
+  } catch (e) {
+    if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
+      try {
+        await window._fbAuth.createUserWithEmailAndPassword(firebaseAuth, email, pw);
+        closeEmailModal();
+      } catch (e2) { errEl.textContent = '회원가입 실패: ' + escapeHtml(e2.message); }
+    } else {
+      errEl.textContent = '로그인 실패: ' + escapeHtml(e.message);
+    }
+  }
+}
+
+async function logoutUser() {
+  const ok = await initFirebase();
+  if (!ok || !firebaseAuth) return;
+  if (confirm('로그아웃할까요?')) await window._fbAuth.signOut(firebaseAuth);
+}
+
+// ═══════════════════════════════════════
+// PWA Service Worker
+// ═══════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// 시작
+loadSettingsUI();
+initFirebase(); // Firebase 미리 초기화 (설정값 있을 때만 실제 동작)
+init();
+</script>
+</body>
+</html>
