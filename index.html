@@ -495,11 +495,101 @@
   }
   .modal-error { font-size: 12px; color: var(--wrong); margin-bottom: 8px; min-height: 16px; }
   body.theme-light {
-    --bg: #f0f2f8; --card: #ffffff; --text: #1a1a2e;
-    --sub: #6b7280; --border: #dde1f0; --accent: #d97706;
+    --bg: #eef1f8;
+    --card: #ffffff;
+    --text: #0f1117;
+    --sub: #374151;
+    --border: #c8cde0;
+    --accent: #a05c07;
+    --correct: #14532d;
+    --wrong: #991b1b;
+    --expert: #5b21b6;
   }
-  body.theme-light .tab-bar { background: rgba(240,242,248,0.96); }
-</style>
+  body.theme-light .header h1 { color: #0f1117; }
+  body.theme-light .header h1 span { color: var(--accent); }
+  body.theme-light .header-tag { background: var(--accent); color: #fff; }
+  body.theme-light .header-date { color: #374151; }
+  body.theme-light .card { background: #fff; border-color: #c8cde0; box-shadow: 0 2px 12px rgba(0,0,0,0.07); }
+  body.theme-light .card::before { background: linear-gradient(90deg, var(--accent), #d97706); }
+  body.theme-light .question { color: #0f1117; font-weight: 900; }
+  body.theme-light .news-source { color: #374151; }
+  body.theme-light .context { background: rgba(160,92,7,0.07); border-left-color: rgba(160,92,7,0.4); color: #1f2937; font-weight: 500; }
+  body.theme-light .opt { border-color: #c8cde0; color: #0f1117; background: #fafbfd; font-weight: 700; }
+  body.theme-light .opt:hover:not(:disabled) { border-color: var(--accent); background: rgba(160,92,7,0.06); }
+  body.theme-light .opt-num { background: #e2e6f0; color: #374151; font-weight: 900; }
+  body.theme-light .opt-text { color: #0f1117; }
+  body.theme-light .opt.correct { border-color: var(--correct); background: rgba(20,83,45,0.08); }
+  body.theme-light .opt.correct .opt-num { background: var(--correct); color: #fff; }
+  body.theme-light .opt.wrong   { border-color: var(--wrong);   background: rgba(153,27,27,0.08); }
+  body.theme-light .opt.wrong   .opt-num   { background: var(--wrong); color: #fff; }
+  body.theme-light .explanation { background: rgba(160,92,7,0.06); border-color: rgba(160,92,7,0.3); color: #1f2937; font-weight: 500; }
+  body.theme-light .explanation strong { color: #7c2d12; }
+  body.theme-light .tip-label { color: var(--accent); }
+  body.theme-light .article-link { background: rgba(160,92,7,0.07); border-color: rgba(160,92,7,0.3); color: var(--accent); font-weight: 900; }
+  body.theme-light .expert-toggle { border-color: rgba(91,33,182,0.4); color: var(--expert); font-weight: 900; }
+  body.theme-light .expert-body { background: rgba(91,33,182,0.04); border-color: rgba(91,33,182,0.2); color: #1f2937; }
+  body.theme-light .expert-body p { color: #1f2937; font-weight: 500; }
+  body.theme-light .expert-body strong { color: var(--expert); }
+  body.theme-light .expert-label { color: var(--expert); }
+  body.theme-light .takeaway { background: rgba(91,33,182,0.08); border-left-color: var(--expert); color: #3b0764; font-weight: 700; }
+  body.theme-light .next-btn { background: var(--accent); color: #fff; }
+  body.theme-light .retry-btn { background: var(--accent); color: #fff; }
+  body.theme-light .final-score { background: linear-gradient(135deg, var(--accent), #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  body.theme-light .final-msg  { color: #0f1117; font-weight: 900; }
+  body.theme-light .final-sub  { color: #374151; font-weight: 500; }
+  body.theme-light .dot        { background: #c8cde0; }
+  body.theme-light .dot.ok     { background: var(--correct); }
+  body.theme-light .dot.no     { background: var(--wrong); }
+  body.theme-light .dot.cur    { background: var(--accent); }
+  body.theme-light .progress-track { background: #dde1ee; }
+  body.theme-light .progress-fill  { background: var(--accent); }
+  body.theme-light .level-pill.lv-easy   { background: #d1fae5; color: #14532d; font-weight: 900; }
+  body.theme-light .level-pill.lv-mid    { background: #fef3c7; color: #78350f; font-weight: 900; }
+  body.theme-light .level-pill.lv-hard   { background: #ffedd5; color: #7c2d12; font-weight: 900; }
+  body.theme-light .level-pill.lv-expert { background: #ede9fe; color: #4c1d95; font-weight: 900; }
+  body.theme-light .level-pill.lv-master { background: #dbeafe; color: #1e3a8a; font-weight: 900; }
+  body.theme-light .q-counter   { color: #374151; font-weight: 700; }
+  body.theme-light .result-badge.ok { background: rgba(20,83,45,0.1); color: var(--correct); font-weight: 900; }
+  body.theme-light .result-badge.no { background: rgba(153,27,27,0.1); color: var(--wrong); font-weight: 900; }
+  body.theme-light .loading-title { color: #0f1117; }
+  body.theme-light .loading-sub   { color: #374151; }
+  body.theme-light .spinner { border-color: #dde1ee; border-top-color: var(--accent); }
+  body.theme-light .tab-bar { background: rgba(238,241,248,0.98); border-top-color: #c8cde0; }
+  body.theme-light .tab-item { color: #4b5563; font-weight: 700; }
+  body.theme-light .tab-item.active { color: var(--accent); }
+  body.theme-light .tab-item.active::after { background: var(--accent); }
+  body.theme-light .settings-section { background: #fff; border-color: #c8cde0; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  body.theme-light .settings-section-title { color: #374151; font-weight: 900; }
+  body.theme-light .settings-row   { border-top-color: #e8ebf4; }
+  body.theme-light .settings-row-label { color: #0f1117; font-weight: 700; }
+  body.theme-light .settings-row-sub   { color: #4b5563; font-weight: 500; }
+  body.theme-light .settings-row-icon  { background: #f0f2f9; }
+  body.theme-light .settings-select { background: #f0f2f9; border-color: #c8cde0; color: #0f1117; font-weight: 700; }
+  body.theme-light .settings-slider-val { color: var(--accent); }
+  body.theme-light .level-btn { border-color: #c8cde0; color: #374151; background: #f5f7fc; font-weight: 700; }
+  body.theme-light .level-btn.sel-easy   { background: #d1fae5; border-color: #14532d; color: #14532d; }
+  body.theme-light .level-btn.sel-mid    { background: #fef3c7; border-color: #78350f; color: #78350f; }
+  body.theme-light .level-btn.sel-hard   { background: #ffedd5; border-color: #7c2d12; color: #7c2d12; }
+  body.theme-light .level-btn.sel-expert { background: #ede9fe; border-color: #4c1d95; color: #4c1d95; }
+  body.theme-light .level-btn.sel-master { background: #dbeafe; border-color: #1e3a8a; color: #1e3a8a; }
+  body.theme-light .login-box  { background: #fff; border-color: #c8cde0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  body.theme-light .login-name { color: #0f1117; font-weight: 900; }
+  body.theme-light .login-email { color: #4b5563; }
+  body.theme-light .oauth-btn  { color: #0f1117; border-color: #c8cde0; background: #f5f7fc; font-weight: 700; }
+  body.theme-light .oauth-btn:hover { background: #eaecf5; }
+  body.theme-light .modal      { background: #fff; border-color: #c8cde0; }
+  body.theme-light .modal-title { color: #0f1117; font-weight: 900; }
+  body.theme-light .modal-input { background: #f0f2f9; border-color: #c8cde0; color: #0f1117; font-weight: 500; }
+  body.theme-light .modal-close { border-color: #c8cde0; color: #4b5563; }
+  body.theme-light .wrongnote-preview { background: #fff; border-color: #c8cde0; }
+  body.theme-light .wrongnote-preview-title { color: #374151; font-weight: 900; }
+  body.theme-light .wrongnote-q   { color: #1f2937; font-weight: 500; }
+  body.theme-light .wrongnote-num { background: rgba(153,27,27,0.1); color: var(--wrong); }
+  body.theme-light .stat-card  { background: #fff; border-color: #c8cde0; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  body.theme-light .stat-label { color: #374151; font-weight: 700; }
+  body.theme-light .coming-soon-title { color: #0f1117; font-weight: 900; }
+  body.theme-light .coming-soon-sub   { color: #374151; font-weight: 500; }
+  body.theme-light .coming-soon-badge { background: rgba(160,92,7,0.1); border-color: rgba(160,92,7,0.35); color: var(--accent); font-weight: 900; }
 </head>
 <body>
 <div class="app">
@@ -695,15 +785,15 @@
           <div class="settings-row-icon">🎯</div>
           <div>
             <div class="settings-row-label">선호 난이도</div>
-            <div class="settings-row-sub">선택한 난이도 위주로, 주변 난이도도 섞어서 출제</div>
+            <div class="settings-row-sub">선택한 난이도 중심으로, 인접 난이도도 섞어서 출제</div>
           </div>
         </div>
         <div class="level-btns" id="levelBtns">
-          <button class="level-btn" data-level="lv-easy"   onclick="toggleLevel(this)">🌱 입문</button>
-          <button class="level-btn" data-level="lv-mid"    onclick="toggleLevel(this)">🔥 초급</button>
-          <button class="level-btn sel-hard" data-level="lv-hard"   onclick="toggleLevel(this)">⚡ 중급</button>
-          <button class="level-btn" data-level="lv-expert" onclick="toggleLevel(this)">💎 고급</button>
-          <button class="level-btn" data-level="lv-master" onclick="toggleLevel(this)">👑 최고급</button>
+          <button class="level-btn" data-level="lv-easy"   onclick="selectLevel(this)">🌱 입문</button>
+          <button class="level-btn" data-level="lv-mid"    onclick="selectLevel(this)">🔥 초급</button>
+          <button class="level-btn sel-hard" data-level="lv-hard"   onclick="selectLevel(this)">⚡ 중급</button>
+          <button class="level-btn" data-level="lv-expert" onclick="selectLevel(this)">💎 고급</button>
+          <button class="level-btn" data-level="lv-master" onclick="selectLevel(this)">👑 최고급</button>
         </div>
       </div>
     </div>
@@ -923,26 +1013,26 @@ function saveStats(isCorrect, quiz) {
 }
 
 // ═══════════════════════════════════════
-// 초기화 — quiz_today.json 만 사용 (API 직접 호출 없음)
+// 초기화 — 난이도 풀에서 설정에 맞게 문제 선택
 // ═══════════════════════════════════════
 async function init() {
-  const d = new Date();
+  const d     = new Date();
+  const count = getSetting('quizCount') || 5;
   document.getElementById('headerDate').textContent =
-    `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} · 오늘의 5문제`;
+    `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} · 오늘의 ${count}문제`;
 
   try {
     const data = await loadJSON();
-    quizzes = data.quizzes;
+    quizzes = selectQuizzesFromPool(data.quizzes, count);
     document.getElementById('loadingArea').style.display = 'none';
     document.getElementById('quizArea').style.display   = 'block';
     initDots();
     render();
-
   } catch (e) {
     document.getElementById('loadingArea').innerHTML = `
       <div style="text-align:center;padding:40px 20px">
         <div style="font-size:48px;margin-bottom:16px">🌅</div>
-        <div style="font-size:16px;font-weight:900;color:#fff;margin-bottom:8px">오늘의 퀴즈 준비 중이에요</div>
+        <div style="font-size:16px;font-weight:900;color:var(--text);margin-bottom:8px">오늘의 퀴즈 준비 중이에요</div>
         <div style="font-size:13px;color:var(--sub);line-height:1.7;margin-bottom:24px">
           매일 오전 6시에 새 퀴즈가 업데이트돼요.<br>잠시 후 다시 열어주세요! 🙏
         </div>
@@ -956,8 +1046,54 @@ async function loadJSON() {
   const res = await fetch(`quiz_today.json?t=${Date.now()}`);
   if (!res.ok) throw new Error('파일 없음');
   const data = await res.json();
-  if (!data.quizzes || data.quizzes.length === 0) throw new Error('퀴즈 없음');
+  if (!data.quizzes) throw new Error('퀴즈 없음');
   return data;
+}
+
+// ═══════════════════════════════════════
+// 난이도 풀에서 가중치 기반 문제 선택
+// ═══════════════════════════════════════
+function selectQuizzesFromPool(pool, count) {
+  // 배열이면 구 포맷 (하위 호환)
+  if (Array.isArray(pool)) return pool.slice(0, count);
+
+  const LEVELS  = ['lv-easy','lv-mid','lv-hard','lv-expert','lv-master'];
+  const pref    = getSetting('level') || 'lv-hard';
+  const prefIdx = LEVELS.indexOf(pref);
+
+  // 거리별 가중치: 선호=10, 거리1=4, 거리2=1, 거리3+=0
+  const weights = LEVELS.map((_, i) => {
+    const d = Math.abs(prefIdx - i);
+    return d === 0 ? 10 : d === 1 ? 4 : d === 2 ? 1 : 0;
+  });
+
+  // 각 레벨 풀 셔플
+  const pools = {};
+  LEVELS.forEach(lv => {
+    pools[lv] = [...(pool[lv] || [])].sort(() => Math.random() - 0.5);
+  });
+  const used = {};
+  LEVELS.forEach(lv => { used[lv] = 0; });
+
+  const picked = [];
+  let w = [...weights];
+
+  while (picked.length < count) {
+    const total = w.reduce((a, b) => a + b, 0);
+    if (total === 0) break;
+    let r = Math.random() * total;
+    let chosenLv = LEVELS[0];
+    for (let i = 0; i < LEVELS.length; i++) {
+      r -= w[i];
+      if (r <= 0) { chosenLv = LEVELS[i]; break; }
+    }
+    if (used[chosenLv] < pools[chosenLv].length) {
+      picked.push(pools[chosenLv][used[chosenLv]++]);
+    } else {
+      w[LEVELS.indexOf(chosenLv)] = 0; // 소진 → 가중치 제거
+    }
+  }
+  return picked;
 }
 
 // ═══════════════════════════════════════
@@ -1141,7 +1277,7 @@ function restart() {
 // 설정 저장/로드
 // ═══════════════════════════════════════
 let userSettings = JSON.parse(localStorage.getItem('userSettings') || '{}');
-const DEFAULTS = { notif: false, notifTime: '08:00', quizCount: 5, levels: ['lv-hard'], theme: 'dark' };
+const DEFAULTS = { notif: false, notifTime: '08:00', quizCount: 5, level: 'lv-hard', theme: 'dark' };
 
 function getSetting(key) {
   return userSettings[key] !== undefined ? userSettings[key] : DEFAULTS[key];
@@ -1151,7 +1287,7 @@ function saveSettings() {
   userSettings.notif      = document.getElementById('notifToggle').checked;
   userSettings.notifTime  = document.getElementById('notifTime').value;
   userSettings.quizCount  = parseInt(document.getElementById('quizCount').value);
-  userSettings.levels     = getSelectedLevels();
+  userSettings.level      = getSelectedLevel();
   userSettings.theme      = document.getElementById('themeSelect').value;
   localStorage.setItem('userSettings', JSON.stringify(userSettings));
 }
@@ -1164,12 +1300,12 @@ function loadSettingsUI() {
   document.getElementById('themeSelect').value           = getSetting('theme');
   applyTheme(getSetting('theme'));
 
-  // 난이도 버튼 복원
-  const saved = getSetting('levels');
+  // 난이도 버튼 복원 (택1)
+  const saved = getSetting('level') || 'lv-hard';
   document.querySelectorAll('.level-btn').forEach(btn => {
-    const lv = btn.dataset.level;
+    const lv  = btn.dataset.level;
     const cls = lv.replace('lv-', 'sel-');
-    btn.classList.toggle(cls, saved.includes(lv));
+    btn.classList.toggle(cls, lv === saved);
   });
 }
 
@@ -1184,24 +1320,23 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
   if (getSetting('theme') === 'system') applyTheme('system');
 });
 
-// ─── 난이도 버튼 토글 ───
-function toggleLevel(btn) {
-  const lv  = btn.dataset.level;
+// ─── 난이도 버튼 택1 ───
+function selectLevel(btn) {
+  const lv = btn.dataset.level;
+  // 모든 버튼 선택 해제
+  document.querySelectorAll('.level-btn').forEach(b => {
+    const cls = b.dataset.level.replace('lv-', 'sel-');
+    b.classList.remove(cls);
+  });
+  // 클릭한 버튼만 선택
   const cls = lv.replace('lv-', 'sel-');
-  const selected = getSelectedLevels();
-  if (selected.includes(lv) && selected.length === 1) return; // 최소 1개 유지
-  btn.classList.toggle(cls);
+  btn.classList.add(cls);
   saveSettings();
 }
 
-function getSelectedLevels() {
-  const sel = [];
-  document.querySelectorAll('.level-btn').forEach(btn => {
-    const lv  = btn.dataset.level;
-    const cls = lv.replace('lv-', 'sel-');
-    if (btn.classList.contains(cls)) sel.push(lv);
-  });
-  return sel.length ? sel : ['lv-hard'];
+function getSelectedLevel() {
+  const btn = document.querySelector('.level-btn[class*="sel-"]');
+  return btn ? btn.dataset.level : 'lv-hard';
 }
 
 // ─── 데이터 초기화 ───
@@ -1221,23 +1356,22 @@ function resetAllData() {
 const LEVEL_ORDER = ['lv-easy','lv-mid','lv-hard','lv-expert','lv-master'];
 
 function getWeightedLevel() {
-  const preferred = getSetting('levels');
-  const weights = {};
-  LEVEL_ORDER.forEach((lv, i) => {
-    weights[lv] = 1; // 기본 가중치
-    preferred.forEach(p => {
-      const dist = Math.abs(LEVEL_ORDER.indexOf(p) - i);
-      if (dist === 0) weights[lv] = (weights[lv] || 0) + 10; // 선호: +10
-      if (dist === 1) weights[lv] = (weights[lv] || 0) + 3;  // 인접: +3
-    });
+  const preferred = getSetting('level') || 'lv-hard';
+  const prefIdx = LEVEL_ORDER.indexOf(preferred);
+  const weights = LEVEL_ORDER.map((lv, i) => {
+    const dist = Math.abs(prefIdx - i);
+    if (dist === 0) return 10; // 선호: 약 59%
+    if (dist === 1) return 3;  // 인접: 각 약 18%
+    if (dist === 2) return 1;  // 2단계: 각 약 6%
+    return 0;
   });
-  const total = Object.values(weights).reduce((a, b) => a + b, 0);
+  const total = weights.reduce((a, b) => a + b, 0);
   let r = Math.random() * total;
-  for (const [lv, w] of Object.entries(weights)) {
-    r -= w;
-    if (r <= 0) return lv;
+  for (let i = 0; i < LEVEL_ORDER.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return LEVEL_ORDER[i];
   }
-  return preferred[0];
+  return preferred;
 }
 
 // ═══════════════════════════════════════
