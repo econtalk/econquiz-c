@@ -34,7 +34,7 @@
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    padding: 32px 16px 80px;
+    padding: 32px 16px 100px;
   }
   .app { width: 100%; max-width: 440px; }
 
@@ -264,77 +264,394 @@
   @keyframes spin    { to { transform: rotate(360deg); } }
   @keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
   @keyframes fadeIn  { from { opacity:0; } to { opacity:1; } }
+  @keyframes tabIn   { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
   .quiz-area { animation: fadeIn .4s ease; }
+
+  /* ── 하단 탭바 ── */
+  .tab-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 64px;
+    background: rgba(16, 18, 32, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    display: flex; align-items: stretch;
+    z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .tab-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 3px; cursor: pointer;
+    background: none; border: none;
+    color: var(--sub); font-family: 'Noto Sans KR', sans-serif;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.3px;
+    transition: color .2s, transform .15s;
+    padding: 0; position: relative;
+  }
+  .tab-item:active { transform: scale(0.92); }
+  .tab-item.active { color: var(--accent); }
+  .tab-item.active::after {
+    content: '';
+    position: absolute; top: 0; left: 20%; right: 20%; height: 2px;
+    background: var(--accent); border-radius: 0 0 4px 4px;
+  }
+  .tab-icon { font-size: 20px; line-height: 1; }
+
+  /* ── 탭 페이지 공통 ── */
+  .tab-page { display: none; animation: tabIn .3s ease; }
+  .tab-page.active { display: block; }
+
+  /* ── 준비 중 화면 ── */
+  .coming-soon {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 60vh; gap: 16px; text-align: center;
+    padding: 32px 24px;
+  }
+  .coming-soon-icon { font-size: 56px; }
+  .coming-soon-title {
+    font-family: 'Gmarket Sans', sans-serif;
+    font-size: 20px; font-weight: 700; color: #fff;
+  }
+  .coming-soon-sub {
+    font-size: 13px; color: var(--sub); line-height: 1.7;
+    max-width: 280px; word-break: keep-all;
+  }
+  .coming-soon-badge {
+    display: inline-block;
+    background: rgba(245,200,66,0.12);
+    border: 1px solid rgba(245,200,66,0.3);
+    color: var(--accent); font-size: 11px; font-weight: 900;
+    padding: 5px 14px; border-radius: 20px; letter-spacing: 1px;
+  }
+
+  /* ── 오답노트 미리보기 ── */
+  .wrongnote-preview {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 20px;
+    margin-top: 24px;
+  }
+  .wrongnote-preview-title {
+    font-size: 13px; font-weight: 900; color: var(--sub);
+    letter-spacing: 1px; margin-bottom: 14px;
+  }
+  .wrongnote-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .wrongnote-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .wrongnote-num {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: rgba(255,79,79,0.15); color: var(--wrong);
+    font-size: 12px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .wrongnote-q { font-size: 13px; color: #bcc0d0; line-height: 1.5; }
+  .wrongnote-level { font-size: 10px; color: var(--sub); margin-top: 3px; }
+
+  /* ── 통계 카드 ── */
+  .stat-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; margin-top: 24px;
+  }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 18px 16px; text-align: center;
+  }
+  .stat-num {
+    font-family: 'Gmarket Sans', sans-serif;
+    font-size: 32px; font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), #ff8c00);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    display: block;
+  }
+  .stat-label { font-size: 11px; color: var(--sub); margin-top: 4px; font-weight: 700; }
 </style>
 </head>
 <body>
 <div class="app">
 
-  <!-- 헤더 -->
-  <div class="header">
-    <div class="header-tag">📈 TODAY'S ECONOMY</div>
-    <h1>오늘의<br><span>경제 퀴즈</span></h1>
-    <p class="header-date" id="headerDate"></p>
-  </div>
+  <!-- ══════════════════════════════════
+       탭 1: 홈 (퀴즈)
+  ══════════════════════════════════ -->
+  <div class="tab-page active" id="page-home">
 
-  <!-- 로딩 -->
-  <div class="loading" id="loadingArea">
-    <div class="spinner"></div>
-    <div>
-      <div class="loading-title">퀴즈 불러오는 중...</div>
-      <div class="loading-sub">잠깐만요, 금방 돼요 ☕</div>
-    </div>
-  </div>
-
-  <!-- 퀴즈 영역 (로딩 후 표시) -->
-  <div id="quizArea" style="display:none">
-    <div class="dots" id="dots"></div>
-
-    <div class="meta-row">
-      <span class="level-pill" id="levelPill"></span>
-      <span class="q-counter"  id="counter"></span>
-    </div>
-    <div class="progress-track">
-      <div class="progress-fill" id="progressFill"></div>
+    <!-- 헤더 -->
+    <div class="header">
+      <div class="header-tag">📈 TODAY'S ECONOMY</div>
+      <h1>오늘의<br><span>경제 퀴즈</span></h1>
+      <p class="header-date" id="headerDate"></p>
     </div>
 
-    <div class="card" id="qCard">
-      <div class="news-source"  id="newsSource"></div>
-      <div class="context"      id="context"></div>
-      <div class="question"     id="questionText"></div>
-      <div class="options"      id="optionsArea"></div>
-      <div class="result-badge" id="resultBadge"></div>
-      <div class="explanation"  id="explanation"></div>
-      <a class="article-link" id="articleLink" target="_blank" rel="noopener"></a>
-      <div class="expert-wrap"  id="expertWrap">
-        <button class="expert-toggle" id="expertToggle" onclick="toggleExpert()">
-          <span>🎓 경제학 박사의 심층 해설 보기</span>
-          <span class="arr">▼</span>
-        </button>
-        <div class="expert-body" id="expertBody"></div>
+    <!-- 로딩 -->
+    <div class="loading" id="loadingArea">
+      <div class="spinner"></div>
+      <div>
+        <div class="loading-title">퀴즈 불러오는 중...</div>
+        <div class="loading-sub">잠깐만요, 금방 돼요 ☕</div>
       </div>
     </div>
 
-    <button class="next-btn" id="nextBtn" onclick="nextQ()"></button>
+    <!-- 퀴즈 영역 -->
+    <div id="quizArea" style="display:none">
+      <div class="dots" id="dots"></div>
+      <div class="meta-row">
+        <span class="level-pill" id="levelPill"></span>
+        <span class="q-counter"  id="counter"></span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="card" id="qCard">
+        <div class="news-source"  id="newsSource"></div>
+        <div class="context"      id="context"></div>
+        <div class="question"     id="questionText"></div>
+        <div class="options"      id="optionsArea"></div>
+        <div class="result-badge" id="resultBadge"></div>
+        <div class="explanation"  id="explanation"></div>
+        <a class="article-link" id="articleLink" target="_blank" rel="noopener"></a>
+        <div class="expert-wrap"  id="expertWrap">
+          <button class="expert-toggle" id="expertToggle" onclick="toggleExpert()">
+            <span>🎓 경제학 박사의 심층 해설 보기</span>
+            <span class="arr">▼</span>
+          </button>
+          <div class="expert-body" id="expertBody"></div>
+        </div>
+      </div>
+      <button class="next-btn" id="nextBtn" onclick="nextQ()"></button>
+    </div>
+
+    <!-- 결과 화면 -->
+    <div class="final card" id="finalScreen">
+      <div class="final-emoji" id="finalEmoji"></div>
+      <div><span class="final-score" id="finalScore"></span><span class="final-total"> / 5</span></div>
+      <div class="final-msg" id="finalMsg"></div>
+      <div class="final-sub" id="finalSub"></div>
+      <div class="dots" id="finalDots" style="margin-bottom:20px"></div>
+      <button class="retry-btn" onclick="restart()">🔄 다시 풀기</button>
+    </div>
+
+  </div><!-- /page-home -->
+
+  <!-- ══════════════════════════════════
+       탭 2: 오답노트
+  ══════════════════════════════════ -->
+  <div class="tab-page" id="page-wrong">
+    <div class="header">
+      <div class="header-tag">📝 WRONG NOTE</div>
+      <h1>오답<br><span>노트</span></h1>
+    </div>
+    <div id="wrongNoteContent"></div>
   </div>
 
-  <!-- 결과 화면 -->
-  <div class="final card" id="finalScreen">
-    <div class="final-emoji" id="finalEmoji"></div>
-    <div><span class="final-score" id="finalScore"></span><span class="final-total"> / 5</span></div>
-    <div class="final-msg" id="finalMsg"></div>
-    <div class="final-sub" id="finalSub"></div>
-    <div class="dots" id="finalDots" style="margin-bottom:20px"></div>
-    <button class="retry-btn" onclick="restart()">🔄 다시 풀기</button>
+  <!-- ══════════════════════════════════
+       탭 3: 통계 & 랭킹
+  ══════════════════════════════════ -->
+  <div class="tab-page" id="page-stats">
+    <div class="header">
+      <div class="header-tag">📊 STATS & RANKING</div>
+      <h1>통계 &amp;<br><span>랭킹</span></h1>
+    </div>
+    <div id="statsContent"></div>
   </div>
 
-</div>
+  <!-- ══════════════════════════════════
+       탭 4: 상점
+  ══════════════════════════════════ -->
+  <div class="tab-page" id="page-shop">
+    <div class="header">
+      <div class="header-tag">🛍️ SHOP</div>
+      <h1>경제<br><span>상점</span></h1>
+    </div>
+    <div class="coming-soon">
+      <div class="coming-soon-icon">🏪</div>
+      <div class="coming-soon-title">상점 오픈 준비 중</div>
+      <div class="coming-soon-sub">
+        포인트로 힌트, 테마, 아이콘을 구매할 수 있는<br>
+        상점이 곧 문을 열어요!
+      </div>
+      <span class="coming-soon-badge">COMING SOON</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       탭 5: 설정
+  ══════════════════════════════════ -->
+  <div class="tab-page" id="page-settings">
+    <div class="header">
+      <div class="header-tag">⚙️ SETTINGS</div>
+      <h1>설정</h1>
+    </div>
+    <div class="coming-soon">
+      <div class="coming-soon-icon">⚙️</div>
+      <div class="coming-soon-title">설정 준비 중</div>
+      <div class="coming-soon-sub">
+        알림, 테마, 언어 등 다양한 설정 기능이<br>
+        곧 추가될 예정이에요!
+      </div>
+      <span class="coming-soon-badge">COMING SOON</span>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ══════════════════════════════════
+     하단 탭바
+══════════════════════════════════ -->
+<nav class="tab-bar">
+  <button class="tab-item active" id="tab-home" onclick="switchTab('home')">
+    <span class="tab-icon">🏠</span>
+    <span>홈</span>
+  </button>
+  <button class="tab-item" id="tab-wrong" onclick="switchTab('wrong')">
+    <span class="tab-icon">📝</span>
+    <span>오답노트</span>
+  </button>
+  <button class="tab-item" id="tab-stats" onclick="switchTab('stats')">
+    <span class="tab-icon">📊</span>
+    <span>통계·랭킹</span>
+  </button>
+  <button class="tab-item" id="tab-shop" onclick="switchTab('shop')">
+    <span class="tab-icon">🛍️</span>
+    <span>상점</span>
+  </button>
+  <button class="tab-item" id="tab-settings" onclick="switchTab('settings')">
+    <span class="tab-icon">⚙️</span>
+    <span>설정</span>
+  </button>
+</nav>
 
 <script>
 // ═══════════════════════════════════════
 // 상태
 // ═══════════════════════════════════════
 let quizzes = [], cur = 0, score = 0;
+let wrongList = JSON.parse(localStorage.getItem('wrongList') || '[]');
+let statsData = JSON.parse(localStorage.getItem('statsData') || '{"total":0,"correct":0,"streak":0,"lastDate":""}');
+
+// ═══════════════════════════════════════
+// 탭 전환
+// ═══════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'wrong')  renderWrongNote();
+  if (name === 'stats')  renderStats();
+}
+
+// ═══════════════════════════════════════
+// 오답노트
+// ═══════════════════════════════════════
+function renderWrongNote() {
+  const el = document.getElementById('wrongNoteContent');
+  if (!wrongList.length) {
+    el.innerHTML = `
+      <div class="coming-soon">
+        <div class="coming-soon-icon">🎯</div>
+        <div class="coming-soon-title">오답이 없어요!</div>
+        <div class="coming-soon-sub">문제를 틀리면 여기에 자동으로 저장돼요.<br>퀴즈를 풀어보세요!</div>
+      </div>`;
+    return;
+  }
+
+  const levels = {'lv-easy':'🌱 입문','lv-mid':'🔥 초급','lv-hard':'⚡ 중급','lv-expert':'💎 고급','lv-master':'👑 최고급'};
+  const items = wrongList.slice().reverse().slice(0, 20).map((w, i) => `
+    <div class="wrongnote-item">
+      <div class="wrongnote-num">${i+1}</div>
+      <div>
+        <div class="wrongnote-q">${w.q}</div>
+        <div class="wrongnote-level">${levels[w.levelClass] || ''} · ${w.date || ''} · 정답: ${w.correct}</div>
+      </div>
+    </div>`).join('');
+
+  el.innerHTML = `
+    <div style="text-align:center;margin-bottom:16px">
+      <span class="coming-soon-badge">총 ${wrongList.length}개 오답</span>
+    </div>
+    <div class="wrongnote-preview">
+      <div class="wrongnote-preview-title">📋 최근 오답 목록</div>
+      ${items}
+    </div>
+    <div style="text-align:center;margin-top:16px">
+      <button onclick="clearWrong()" style="padding:10px 24px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--sub);font-size:13px;font-family:inherit;cursor:pointer;">
+        🗑️ 오답노트 초기화
+      </button>
+    </div>`;
+}
+
+function clearWrong() {
+  if (confirm('오답노트를 초기화할까요?')) {
+    wrongList = [];
+    localStorage.setItem('wrongList', '[]');
+    renderWrongNote();
+  }
+}
+
+// ═══════════════════════════════════════
+// 통계 & 랭킹
+// ═══════════════════════════════════════
+function renderStats() {
+  const el = document.getElementById('statsContent');
+  const rate = statsData.total ? Math.round(statsData.correct / statsData.total * 100) : 0;
+  const grade = rate >= 90 ? '🏆 경제 박사' : rate >= 70 ? '😎 경제 고수' : rate >= 50 ? '🙂 경제 입문자' : '📚 경제 공부 중';
+
+  el.innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card">
+        <span class="stat-num">${statsData.total}</span>
+        <div class="stat-label">총 문제 수</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num">${rate}%</span>
+        <div class="stat-label">정답률</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num">${statsData.streak}</span>
+        <div class="stat-label">연속 정답</div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num">${wrongList.length}</span>
+        <div class="stat-label">오답 누적</div>
+      </div>
+    </div>
+    <div class="wrongnote-preview" style="margin-top:16px;text-align:center">
+      <div class="coming-soon-icon" style="font-size:36px;margin-bottom:8px">🎖️</div>
+      <div style="font-size:16px;font-weight:900;color:#fff;margin-bottom:4px">${grade}</div>
+      <div style="font-size:12px;color:var(--sub)">현재 나의 경제 실력 등급</div>
+    </div>
+    <div class="coming-soon" style="min-height:auto;margin-top:8px;padding:24px">
+      <div class="coming-soon-icon" style="font-size:36px">🏅</div>
+      <div class="coming-soon-title" style="font-size:16px">랭킹 보드</div>
+      <div class="coming-soon-sub">다른 유저들과 점수를 비교하는<br>랭킹 기능이 곧 추가돼요!</div>
+      <span class="coming-soon-badge">COMING SOON</span>
+    </div>`;
+}
+
+// ═══════════════════════════════════════
+// 통계 저장
+// ═══════════════════════════════════════
+function saveStats(isCorrect, quiz) {
+  statsData.total++;
+  if (isCorrect) {
+    statsData.correct++;
+    statsData.streak++;
+  } else {
+    statsData.streak = 0;
+    // 오답 저장
+    wrongList.push({
+      q: quiz.q,
+      levelClass: quiz.levelClass,
+      correct: quiz.opts[quiz.ans],
+      date: new Date().toLocaleDateString('ko-KR', {month:'2-digit', day:'2-digit'})
+    });
+    localStorage.setItem('wrongList', JSON.stringify(wrongList));
+  }
+  statsData.lastDate = new Date().toISOString().slice(0,10);
+  localStorage.setItem('statsData', JSON.stringify(statsData));
+}
 
 // ═══════════════════════════════════════
 // 초기화 — quiz_today.json 만 사용 (API 직접 호출 없음)
@@ -461,6 +778,7 @@ function pick(idx) {
   if (!ok) btns[q.ans].classList.add('correct');
   if (ok) score++;
 
+  saveStats(ok, q);
   updateDot(cur, ok ? 'ok' : 'no');
 
   // 배지
