@@ -319,7 +319,7 @@ def fetch_quiz_from_claude(news_list):
     prompt = build_quiz_prompt(news_list)
     msg = client.messages.create(
         model="claude-haiku-4-5-20251001",
-        max_tokens=16000,
+        max_tokens=20000,
         messages=[{"role": "user", "content": prompt}]
     )
 
@@ -328,29 +328,110 @@ def fetch_quiz_from_claude(news_list):
         raise ValueError("Claude 텍스트 응답 없음")
 
     raw = max(texts, key=len)
-    print(f"  Claude 응답 길이: {len(raw)}자")
+    stop_reason = msg.stop_reason
+    print(f"  Claude 응답 길이: {len(raw)}자 (stop_reason: {stop_reason})")
 
-    data       = _parse_json(raw)
+    # stop_reason이 max_tokens면 응답이 잘린 것 → 분할 호출
+    if stop_reason == 'max_tokens':
+        print("  ⚠️ 응답 잘림 감지 — 난이도별 분할 호출로 전환")
+        return fetch_quiz_split(news_list, client)
+
+    data    = _parse_json(raw)
+    quizzes = data.get('quizzes', {})
+
+    # 퀴즈 수 검증 — 부족한 난이도 있으면 분할 호출
+    missing = [lv for lv in LEVELS if len(quizzes.get(lv, [])) < 7]
+    if missing:
+        print(f"  ⚠️ 부족한 난이도: {missing} — 분할 호출로 전환")
+        return fetch_quiz_split(news_list, client)
+
+    return _inject_urls_and_shuffle(data, news_list)
+
+
+def fetch_quiz_split(news_list, client):
+    """난이도를 2그룹으로 나눠서 각각 호출"""
+    assignment = assign_news_to_levels(news_list)
+    all_quizzes = {}
+
+    groups = [
+        ['lv-easy', 'lv-mid', 'lv-hard'],
+        ['lv-expert', 'lv-master']
+    ]
+
+    for g_idx, group_levels in enumerate(groups):
+        print(f"  분할 호출 {g_idx+1}/2: {group_levels}")
+
+        # 해당 그룹 뉴스만 포함한 프롬프트
+        level_blocks = ""
+        for lv in group_levels:
+            label = {'lv-easy':'🌱 입문','lv-mid':'🔥 초급','lv-hard':'⚡ 중급',
+                     'lv-expert':'💎 고급','lv-master':'👑 최고급'}[lv]
+            level_blocks += f"\n[{label}용 뉴스]\n"
+            for j, n in enumerate(assignment[lv], 1):
+                level_blocks += f"  뉴스{j}. {n['title']}\n  내용: {n['summary']}\n\n"
+
+        lv_json = {lv: f"[ 7개 퀴즈 ]" for lv in group_levels}
+        split_prompt = f"""
+당신은 경제 퀴즈 출제 전문가입니다.
+아래 뉴스로 난이도별 퀴즈를 각 7개씩 만들어주세요.
+
+{level_blocks}
+
+[규칙 요약]
+- 정답: 뉴스 원문 수치/단어와 정확히 일치
+- 수치 문제 각 난이도 최대 3개
+- 같은 난이도 7문제 안에서 동일 뉴스 최대 2회
+- 단정적 표현에 쿠션 단어 필수 ("기사에 따르면" 등)
+- context: 2문장, 정답 수치 미포함
+- exp: 3문장, <strong> 키워드 강조
+- expert_detail: <span class="expert-label">🎓 박사의 한마디</span> 시작, <p> 3문단, 마지막 <p class="takeaway">
+
+[출력] JSON만:
+{{
+  "quizzes": {{
+    {chr(10).join(f'"{lv}": [ 7개 퀴즈 객체 ],' for lv in group_levels).rstrip(',')}
+  }}
+}}
+
+각 퀴즈 객체: {{"levelClass":"lv-easy","source":"{today_display}·출처","news_idx":0,"context":"...","q":"...","opts":["...","...","...","..."],"ans":0,"exp":"...","expert_detail":"..."}}
+"""
+        msg = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=12000,
+            messages=[{"role": "user", "content": split_prompt}]
+        )
+        texts = [b.text for b in msg.content if hasattr(b, 'text') and b.text.strip()]
+        raw   = max(texts, key=len) if texts else ""
+        print(f"    응답 길이: {len(raw)}자")
+
+        part_data    = _parse_json(raw)
+        part_quizzes = part_data.get('quizzes', {})
+        for lv in group_levels:
+            all_quizzes[lv] = part_quizzes.get(lv, [])
+
+    final_data = {'date': today, 'quizzes': all_quizzes}
+    return _inject_urls_and_shuffle(final_data, news_list)
+
+
+def _inject_urls_and_shuffle(data, news_list):
+    """URL 주입 + 정답 랜덤 셔플"""
     assignment = assign_news_to_levels(news_list)
     quizzes    = data.get('quizzes', {})
 
     for lv in LEVELS:
-        pool     = quizzes.get(lv, [])
-        lv_news  = assignment[lv]
-        lv_n     = len(lv_news)
+        pool    = quizzes.get(lv, [])
+        lv_news = assignment[lv]
+        lv_n    = max(1, len(lv_news))
 
         for q in pool:
-            # news_idx로 해당 난이도 뉴스 매핑
             idx  = q.get('news_idx', 0)
             news = lv_news[idx % lv_n] if lv_news else {}
             q['article_title'] = news.get('title', '')
             q['article_url']   = news.get('url', '')
 
-            # 정답 위치 랜덤 셔플
             opts = q.get('opts', [])
             ans  = q.get('ans', 0)
-            if not (0 <= ans < len(opts)):
-                ans = 0
+            if not (0 <= ans < len(opts)): ans = 0
             correct = opts[ans]
             others  = [o for j, o in enumerate(opts) if j != ans]
             random.shuffle(others)
@@ -369,21 +450,57 @@ def fetch_quiz_from_claude(news_list):
 # JSON 파싱 헬퍼
 # ═══════════════════════════════════════
 def _parse_json(raw):
+    # 1) ```json ... ``` 코드블록 제거
+    raw = re.sub(r'```(?:json)?\s*', '', raw).strip()
+
+    # 2) 가장 바깥 { } 추출
     start = raw.find('{')
     if start == -1:
         raise ValueError("JSON { 없음:\n" + raw[:300])
+
     depth, end = 0, -1
     for i, ch in enumerate(raw[start:], start):
         if ch == '{':   depth += 1
         elif ch == '}':
             depth -= 1
             if depth == 0: end = i + 1; break
+
     if end == -1:
-        raise ValueError("JSON } 없음:\n" + raw[:300])
+        raise ValueError("JSON } 없음. 응답 마지막 200자:\n" + raw[-200:])
+
+    json_str = raw[start:end]
+
+    # 3) 직접 파싱 시도
     try:
-        return json.loads(raw[start:end])
-    except json.JSONDecodeError:
-        return json.loads(raw[start:end].replace('\n',' ').replace('\r',''))
+        return json.loads(json_str)
+    except json.JSONDecodeError as e1:
+        print(f"  ⚠️ 1차 파싱 실패: {e1} (위치: char {e1.pos})")
+        # 오류 위치 주변 출력
+        pos = e1.pos
+        print(f"  오류 주변: ...{json_str[max(0,pos-60):pos+60]}...")
+
+    # 4) 개행 제거 후 재시도
+    try:
+        return json.loads(json_str.replace('\n', ' ').replace('\r', ''))
+    except json.JSONDecodeError as e2:
+        print(f"  ⚠️ 2차 파싱 실패: {e2}")
+
+    # 5) 제어문자 제거 후 재시도
+    import unicodedata
+    cleaned = ''.join(
+        c for c in json_str
+        if not unicodedata.category(c).startswith('C') or c in ('\n', '\t')
+    )
+    cleaned = cleaned.replace('\n', ' ').replace('\t', ' ')
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError as e3:
+        raise ValueError(
+            f"JSON 파싱 3회 모두 실패.\n"
+            f"마지막 오류: {e3}\n"
+            f"JSON 앞 500자: {json_str[:500]}\n"
+            f"JSON 뒤 200자: {json_str[-200:]}"
+        )
 
 
 # ═══════════════════════════════════════
