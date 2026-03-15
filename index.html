@@ -1153,6 +1153,10 @@ const LEVEL_MAP = {
 
 function render() {
   const q = quizzes[cur];
+  // levelClass 방어 처리
+  const VALID_LEVELS = ['lv-easy','lv-mid','lv-hard','lv-expert','lv-master'];
+  if (!VALID_LEVELS.includes(q.levelClass)) q.levelClass = 'lv-hard';
+
   document.getElementById('levelPill').textContent  = LEVEL_MAP[q.levelClass] || q.levelClass;
   document.getElementById('levelPill').className    = 'level-pill ' + q.levelClass;
   document.getElementById('counter').textContent    = `${cur+1} / ${quizzes.length}`;

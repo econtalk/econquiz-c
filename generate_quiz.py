@@ -287,6 +287,8 @@ def _inject_urls_and_shuffle(data, news_list):
         lv_news = assignment[lv]
         lv_n    = max(1, len(lv_news))
         for q in pool:
+            # levelClass 강제 보정 (Claude가 한글로 쓰거나 틀리게 쓰는 경우 대비)
+            q['levelClass'] = lv
             idx  = q.get('news_idx', 0)
             news = lv_news[idx % lv_n] if lv_news else {}
             q['article_title'] = news.get('title', '')
